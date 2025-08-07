@@ -1,0 +1,116 @@
+/* Couleurs par défaut du site Touché de Séduction */
+
+:root {
+  /* Couleurs principales */
+  --primary-color: #670D2F;      /* Rose principal */
+  --secondary-color: #A53860;    /* Beige/rose clair */
+  --accent-color: #A53860;       /* Blanc rosé */
+  
+  /* Couleurs de texte */
+  --text-primary: #FFDBDB;       /* Gris foncé pour le texte principal */
+  --text-secondary: #F1E7E7;     /* Gris moyen pour le texte secondaire */
+  --text-light: #F1E7E7;         /* Gris clair pour le texte léger */
+  
+  /* Couleurs d'état */
+  --success-color: #48BB78;      /* Vert pour les succès */
+  --error-color: #F56565;        /* Rouge pour les erreurs */
+  --warning-color: #ED8936;      /* Orange pour les avertissements */
+  
+  /* Couleurs de fond */
+  --bg-primary: #FFFFFF;         /* Blanc */
+  --bg-secondary: #670D2F;       /* Gris très clair */
+  --bg-accent: #670D2F;          /* Blanc rosé */
+  
+  /* Couleurs d'interaction */
+  --hover-color: #670D2F;        /* Rouge foncé pour les hovers */
+  --focus-color: #A53860;        /* Rose principal pour les focus */
+  
+  /* Couleurs de bordure */
+  --border-color: #A53860;       /* Gris clair pour les bordures */
+  --border-focus: #A53860;       /* Rose pour les bordures focus */
+}
+
+/* Classes utilitaires pour les couleurs - Plus spécifiques */
+.custom-bg-primary { background-color: var(--primary-color) !important; }
+.custom-bg-secondary { background-color: var(--secondary-color) !important; }
+.custom-bg-accent { background-color: var(--accent-color) !important; }
+
+.custom-text-primary { color: var(--primary-color) !important; }
+.custom-text-secondary { color: var(--secondary-color) !important; }
+.custom-text-accent { color: var(--accent-color) !important; }
+.custom-text-primary-dark { color: var(--text-primary) !important; }
+.custom-text-secondary-dark { color: var(--text-secondary) !important; }
+.custom-text-light { color: var(--text-light) !important; }
+
+.custom-border-primary { border-color: var(--primary-color) !important; }
+.custom-border-secondary { border-color: var(--secondary-color) !important; }
+.custom-border-accent { border-color: var(--accent-color) !important; }
+
+/* Classes pour les états */
+.custom-hover\:bg-primary:hover { background-color: var(--primary-color) !important; }
+.custom-hover\:text-primary:hover { color: var(--primary-color) !important; }
+.custom-focus\:ring-primary:focus { --tw-ring-color: var(--primary-color) !important; }
+
+/* Classes pour les boutons */
+.custom-btn-primary {
+  background-color: var(--primary-color);
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.custom-btn-primary:hover {
+  background-color: var(--hover-color);
+  transform: translateY(-1px);
+}
+
+.custom-btn-secondary {
+  background-color: var(--secondary-color);
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+}
+
+.custom-btn-secondary:hover {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+/* Classes de compatibilité avec les noms existants */
+.bg-primary { background-color: var(--primary-color) !important; }
+.bg-secondary { background-color: var(--secondary-color) !important; }
+.bg-accent { background-color: var(--accent-color) !important; }
+
+.text-primary { color: var(--primary-color) !important; }
+.text-secondary { color: var(--secondary-color) !important; }
+.text-accent { color: var(--accent-color) !important; }
+
+.border-primary { border-color: var(--primary-color) !important; }
+.border-secondary { border-color: var(--secondary-color) !important; }
+.border-accent { border-color: var(--accent-color) !important; }
+
+/* Classes pour les états */
+.hover\:bg-primary:hover { background-color: var(--primary-color) !important; }
+.hover\:text-primary:hover { color: var(--primary-color) !important; }
+.focus\:ring-primary:focus { --tw-ring-color: var(--primary-color) !important; }
+
+/* Classes pour les boutons */
+.btn-primary {
+  background-color: var(--primary-color);
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background-color: var(--hover-color);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background-color: var(--secondary-color);
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background-color: var(--primary-color);
+  color: white;
+} 
