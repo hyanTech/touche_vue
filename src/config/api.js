@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 // Configuration de base de l'API
-const API_BASE_URL = 'https://toucheapi-production.up.railway.app/api'
+export const API_BASE_URL = 'https://toucheapi-production.up.railway.app/api'
 
 // Création d'une instance axios avec la configuration de base
 const apiClient = axios.create({

@@ -83,8 +83,24 @@
         <div v-for="product in activeProducts" :key="product.id"
           class="bg-white rounded-lg shadow-lg overflow-hidden group flex flex-col">
           <div class="relative" @click="showProductDetails(product)">
-            <img :src="getImageUrl(product.image_cover)" :alt="product.nom"
-              class="w-full h-48 sm:h-56 object-cover cursor-pointer" @error="handleImageError">
+            <!-- Container pour l'image avec loader -->
+            <div class="relative w-full h-48 sm:h-56 bg-gray-100">
+              <!-- Loader pendant le chargement -->
+              <div v-if="!product.imageLoaded" class="absolute inset-0 flex items-center justify-center">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+              
+              <!-- Image -->
+              <img 
+                :src="getImageUrl(product.image_cover)" 
+                :alt="product.nom"
+                class="w-full h-full object-cover cursor-pointer transition-opacity duration-300"
+                :class="{ 'opacity-0': !product.imageLoaded, 'opacity-100': product.imageLoaded }"
+                @load="product.imageLoaded = true"
+                @error="handleImageError"
+              >
+            </div>
+            
             <div class="absolute inset-0 flex items-center justify-center">
               <button @click.stop="handleAddToCart(product)"
                 :disabled="product.stock === 0"
@@ -240,7 +256,11 @@ const loadProducts = async () => {
 
   try {
     const response = await productService.getActiveProducts();
-    activeProducts.value = response.data.data || [];
+    // Ajouter la propriété imageLoaded à chaque produit
+    activeProducts.value = (response.data.data || []).map(product => ({
+      ...product,
+      imageLoaded: false
+    }));
   } catch (error) {
     console.error('Erreur lors du chargement des produits:', error);
     productsError.value = 'Erreur lors du chargement des produits. Veuillez réessayer.';

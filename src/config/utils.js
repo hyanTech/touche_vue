@@ -1,14 +1,15 @@
+import { API_BASE_URL } from './api'
 // Utilitaires pour la gestion des images
 export const getImageUrl = (filename) => {
   if (!filename) return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMiAxNkMxMiAxNC44OTU0IDEyLjg5NTQgMTQgMTQgMTRIMjZDMjcuMTA0NiAxNCAyOCAxNC44OTU0IDI4IDE2VjI4QzI4IDI5LjEwNDYgMjcuMTA0NiAzMCAyNiAzMEgxNEMxMi44OTU0IDMwIDEyIDI5LjEwNDYgMTIgMjhWMTZaIiBmaWxsPSIjOUI5QkEwIi8+CjxwYXRoIGQ9Ik0xNiAyMkMxNiAyMC44OTU0IDE2Ljg5NTQgMjAgMTggMjBIMjJDMjMuMTA0NiAyMCAyNCAyMC44OTU0IDI0IDIyVjI2QzI0IDI3LjEwNDYgMjMuMTA0NiAyOCAyMiAyOEgxOEMxNi44OTU0IDI4IDE2IDI3LjEwNDYgMTYgMjZWMjJaIiBmaWxsPSIjRjNGNEY2Ii8+Cjwvc3ZnPgo='
   
   // Si c'est déjà une URL complète, l'utiliser directement
-  if (filename.startsWith('http://') || filename.startsWith('https://')) {
+  /* if (filename.startsWith('http://') || filename.startsWith('https://')) {
     return filename
-  }
+  } */
   
   // Sinon, construire l'URL avec le proxy Vite
-  return `/api/files/products/${filename}`
+  return `${API_BASE_URL}/files/products/${filename}`
 }
 
 // Fonction pour gérer les erreurs d'images
