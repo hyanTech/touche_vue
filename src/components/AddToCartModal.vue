@@ -88,9 +88,9 @@
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>
-          <p class="text-sm text-text-secondary mt-1">
+          <!-- <p class="text-sm text-text-secondary mt-1">
             Stock disponible: {{ product?.stock }} unités
-          </p>
+          </p> -->
         </div>
       </div>
 
