@@ -2,7 +2,7 @@
 export const adminMenu = [
     { 
         name: 'Tableau de Bord', 
-        route: '/admin/dash', 
+        route: '/admin/dashboard', 
         icon: 'fas fa-tachometer-alt',
         hasSubmenu: false,
         component: 'Dashboard'
