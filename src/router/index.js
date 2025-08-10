@@ -29,6 +29,15 @@ import Profil from '../admin/settings/profil.vue'
 import User from '../admin/user/user.vue'
 import UserCreate from '../admin/user/user_create.vue'
 import Settings from '../admin/settings/settings.vue'
+import Notifications from '../admin/settings/Notifications.vue'
+import Newsletters from '../admin/settings/Newsletters.vue'
+import SiteInfo from '../admin/settings/SiteInfo.vue'
+import Contact_Admin from '../admin/settings/contact.vue'
+import PrivacyPolicy from '../admin/settings/PrivacyPolicy.vue'
+import LegalMentions from '../admin/settings/LegalMentions.vue'
+import Pub from '../admin/settings/pub/pub.vue'
+import EditPub from '../admin/settings/pub/edit_pub.vue'
+import CreatePub from '../admin/settings/pub/create_pub.vue'
 
 const routes = [
   {
@@ -89,10 +98,10 @@ const routes = [
       {
         path: '',
         name: 'AdminRedirect',
-        redirect: '/admin/dash'
+        redirect: '/admin/dashboard'
       },
       {
-        path: 'dash',
+        path: 'dashboard',
         name: 'AdminDash',
         component: AdminDash,
         meta: { requiresAuth: true }
@@ -192,6 +201,60 @@ const routes = [
         name: 'UserCreate',
         component: UserCreate,
         meta: { requiresAuth: true }
+      },
+      {
+        path: 'settings/notifications',
+        name: 'Notifications',
+        component: Notifications,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'settings/newsletters',
+        name: 'Newsletters',
+        component: Newsletters,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'settings/site-info',
+        name: 'SiteInfo',
+        component: SiteInfo,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'settings/contact',
+        name: 'Contact_Admin',
+        component: Contact_Admin,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'settings/privacy-policy',
+        name: 'PrivacyPolicy',
+        component: PrivacyPolicy,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'settings/legal-mentions',
+        name: 'LegalMentions',
+        component: LegalMentions,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'settings/pub',
+        name: 'Pub',
+        component: Pub,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'settings/edit_pub/:id',
+        name: 'EditPub',
+        component: EditPub,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'settings/pub/create',
+        name: 'CreatePub',
+        component: CreatePub,
+        meta: { requiresAuth: true }
       }
     ]
   },
@@ -211,24 +274,23 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   // Vérifier si la route nécessite une authentification
   if (to.meta.requiresAuth || to.path.startsWith('/admin')) {
-    const isAuthenticated = authService.isAuthenticated()
-    
-    if (!isAuthenticated) {
-      // Rediriger vers la page de connexion si non authentifié
-      next({ name: 'Login' })
-      return
-    }
-    
-    // Vérifier la validité du token (vérification locale)
-    const isValid = await authService.validateToken(false)
-    if (!isValid) {
+    try {
+      const isAuthenticated = await authService.isAuthenticated()
+      
+      if (!isAuthenticated) {
+        // Rediriger vers la page de connexion si non authentifié
+        next({ name: 'Login' })
+        return
+      }
+      
+      // Passer les informations utilisateur à la route
+      to.meta.userInfo = authService.getUserInfo()
+    } catch (error) {
+      console.error('Erreur lors de la vérification d\'authentification:', error)
       authService.logout()
       next({ name: 'Login' })
       return
     }
-    
-    // Passer les informations utilisateur à la route
-    to.meta.userInfo = authService.getUserInfo()
   }
   
   next()

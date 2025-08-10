@@ -7,18 +7,18 @@
     <div v-if="isPageLoading" class="fixed inset-0 z-[9999] bg-white flex items-center justify-center">
       <div class="text-center">
         <img src="/src/assets/logo.png" alt="Logo" class="h-28 w-auto mx-auto mb-4 animate-pulse">
-        <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-pink-500 mx-auto mb-4"></div>
+        <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-[#F8B259] mx-auto mb-4"></div>
         <p class="text-gray-600 font-medium">Chargement...</p>
       </div>
     </div>
 
     <!-- Page Transition Overlay -->
-    <div v-if="isPageTransitioning" class="fixed inset-0 z-[9998] bg-pink-500 flex items-center justify-center">
+    <div v-if="isPageTransitioning" class="fixed inset-0 z-[9998] bg-[#F8B259] flex items-center justify-center">
       <div class="text-center text-white">
         <div class="animate-pulse">
           <img src="/src/assets/logo.png" alt="Logo" class="h-20 w-auto mx-auto mb-4">
-          <h2 class="text-2xl font-bold mb-2">Touché de Séduction</h2>
-          <p class="text-pink-200">Changement de page...</p>
+          <h2 class="text-2xl font-bold mb-2">Touche de Séduction</h2>
+          <p class="text-[#443627]">Changement de page...</p>
         </div>
       </div>
     </div>
@@ -30,14 +30,14 @@
     <aside :class="['fixed top-0 left-0 w-72 h-full bg-white shadow-xl z-50 p-6 transform transition-transform duration-300', isSidebarOpen ? 'translate-x-0' : '-translate-x-full']">
       <div class="flex justify-between items-center mb-8">
         <div class="flex items-center">
-          <img src="/src/assets/logo.png" alt="Logo" class="h-8 w-auto">
+          <img src="/src/assets/logo.png" alt="Logo" class="h-28 w-auto">
         </div>
         <button @click="toggleSidebar" class="text-gray-500 hover:text-gray-800 cursor-pointer"><i class="fas fa-times text-xl"></i></button>
       </div>
       <nav>
         <ul>
           <li v-for="(link, index) in dynamicMobileMenu" :key="link.name" class="border-b border-gray-200">
-            <div v-if="!link.sublinks" class="block text-gray-700 hover:bg-pink-50 hover:text-pink-600 rounded-md p-3 transition-colors">
+            <div v-if="!link.sublinks" class="block text-gray-700 hover:bg-[#F8B259] hover:text-[#F8B259] rounded-md p-3 transition-colors">
               <a :href="link.href" class="cursor-pointer flex items-center">
                 <i v-if="link.icon" :class="link.icon" class="mr-3"></i>
                 {{ link.name }}
@@ -99,7 +99,7 @@
                         :disabled="item.quantity >= item.stock"
                         class="w-6 h-6 bg-gray-200 rounded-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 transition-colors">+</button>
               </div>
-              <p class="text-xs text-gray-400 mt-1">{{ item.quantity }} sur {{ item.stock }} disponibles</p>
+              <!-- <p class="text-xs text-gray-400 mt-1">{{ item.quantity }} sur {{ item.stock }} disponibles</p> -->
             </div>
             <button @click="removeFromCart(item.id, item.selectedColor, item.selectedSize)" class="text-red-500 hover:text-red-700 cursor-pointer ml-2"><i class="fas fa-trash"></i></button>
           </div>

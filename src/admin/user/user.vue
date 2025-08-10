@@ -27,9 +27,29 @@
               </router-link>
           </div>
         </div>
+
+        <!-- Loading State -->
+        <div v-if="loading" class="bg-white rounded-xl shadow-md p-8 text-center">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p class="mt-4 text-gray-600">Chargement des utilisateurs...</p>
+        </div>
+
+        <!-- Error State -->
+        <div v-else-if="error" class="bg-white rounded-xl shadow-md p-8 text-center">
+          <div class="text-red-600 mb-4">
+            <svg class="h-12 w-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+            </svg>
+          </div>
+          <h3 class="text-lg font-medium text-gray-900 mb-2">Erreur lors du chargement</h3>
+          <p class="text-gray-600 mb-4">{{ error }}</p>
+          <button @click="loadUsers" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+            Réessayer
+          </button>
+        </div>
   
         <!-- User List Card -->
-        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        <div v-else class="bg-white rounded-xl shadow-md overflow-hidden">
           <!-- User Table -->
           <div class="overflow-x-auto">
             <table class="w-full text-sm text-left text-gray-600">
@@ -39,7 +59,7 @@
                   <th scope="col" class="px-6 py-3">Rôle</th>
                   <th scope="col" class="px-6 py-3">Statut</th>
                   <th scope="col" class="px-6 py-3">Inscrit le</th>
-                  <th scope="col" class="px-6 py-3 text-center">Action</th>
+                  <th scope="col" class="px-6 py-3 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -47,29 +67,54 @@
                 <tr v-for="user in filteredUsers" :key="user.id" class="bg-white border-b hover:bg-gray-50">
                   <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
                     <div class="flex items-center">
-                      <img class="h-10 w-10 rounded-full object-cover" :src="user.avatarUrl" :alt="user.name"
-                           onerror="this.onerror=null;this.src='https://placehold.co/40x40/e2e8f0/7f8c9b?text=User';">
+                      <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                        <span class="text-sm font-medium text-gray-600">
+                          {{ getUserInitials(user.firstName, user.lastName) }}
+                        </span>
+                      </div>
                       <div class="ml-4">
-                        <div class="font-semibold">{{ user.name }}</div>
+                        <div class="font-semibold">{{ user.firstName }} {{ user.lastName }}</div>
                         <div class="text-gray-500">{{ user.email }}</div>
                       </div>
                     </div>
                   </td>
-                  <td class="px-6 py-4">{{ user.role }}</td>
                   <td class="px-6 py-4">
-                    <span :class="getStatusClass(user.status)" class="px-3 py-1 text-xs font-semibold rounded-full">
-                      {{ user.status }}
+                    <span :class="getRoleClass(user.role)" class="px-3 py-1 text-xs font-semibold rounded-full">
+                      {{ user.role }}
                     </span>
                   </td>
-                  <td class="px-6 py-4">{{ formatDate(user.joinedDate) }}</td>
+                  <td class="px-6 py-4">
+                    <span :class="getStatusClass(user.isActive)" class="px-3 py-1 text-xs font-semibold rounded-full">
+                      {{ user.isActive ? 'Actif' : 'Inactif' }}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4">{{ formatDate(user.createdAt) }}</td>
                   <td class="px-6 py-4 text-center">
-                    <button @click="viewProfile(user)" class="font-medium text-blue-600 hover:underline">
-                      Voir le profil
-                    </button>
+                    <div class="flex items-center justify-center space-x-2">
+                      <button @click="viewProfile(user)" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                        Voir
+                      </button>
+                      <button @click="editUser(user)" class="text-green-600 hover:text-green-800 text-sm font-medium">
+                        Modifier
+                      </button>
+                      <!-- Masquer les options pour les admins -->
+                      <button 
+                        v-if="user.role !== 'admin'" 
+                        @click="toggleUserStatus(user)" 
+                        class="text-orange-600 hover:text-orange-800 text-sm font-medium">
+                        {{ user.isActive ? 'Désactiver' : 'Activer' }}
+                      </button>
+                      <button 
+                        v-if="user.role !== 'admin'" 
+                        @click="deleteUser(user)" 
+                        class="text-red-600 hover:text-red-800 text-sm font-medium">
+                        Supprimer
+                      </button>
+                    </div>
                   </td>
                 </tr>
                 <!-- Empty state -->
-                <tr v-if="!filteredUsers.length">
+                <tr v-if="!filteredUsers.length && !loading">
                   <td colspan="5" class="text-center py-10 text-gray-500">
                     Aucun utilisateur trouvé.
                   </td>
@@ -83,59 +128,17 @@
   </template>
   
   <script>
+  import { userService } from '../../config/api.js'
+  import { notificationService } from '../../config/notification.js'
+
   export default {
     name: 'User',
     data() {
       return {
         searchQuery: '',
-        // Sample user data. In a real application, you would fetch this from an API.
-        users: [
-          {
-            id: 1,
-            name: 'Afi Ananou',
-            email: 'afi.ananou@example.com',
-            avatarUrl: 'https://placehold.co/100x100/a7b3c4/FFF?text=AA',
-            role: 'Administrateur',
-            status: 'Actif',
-            joinedDate: '2023-05-12',
-          },
-          {
-            id: 2,
-            name: 'Koffi Agbessi',
-            email: 'koffi.agbessi@example.com',
-            avatarUrl: 'https://placehold.co/100x100/d1d5db/FFF?text=KA',
-            role: 'Éditeur',
-            status: 'Actif',
-            joinedDate: '2023-08-21',
-          },
-          {
-            id: 3,
-            name: 'Ekué Mensah',
-            email: 'ekue.mensah@example.com',
-            avatarUrl: 'https://placehold.co/100x100/9ca3af/FFF?text=EM',
-            role: 'Utilisateur',
-            status: 'Inactif',
-            joinedDate: '2024-01-05',
-          },
-          {
-            id: 4,
-            name: 'Fifi Lawson',
-            email: 'fifi.lawson@example.com',
-            avatarUrl: 'https://placehold.co/100x100/f87171/FFF?text=FL',
-            role: 'Utilisateur',
-            status: 'Actif',
-            joinedDate: '2024-03-15',
-          },
-           {
-            id: 5,
-            name: 'Yao Sodji',
-            email: 'yao.sodji@example.com',
-            avatarUrl: 'https://placehold.co/100x100/34d399/FFF?text=YS',
-            role: 'Utilisateur',
-            status: 'En attente',
-            joinedDate: '2024-07-30',
-          },
-        ],
+        users: [],
+        loading: false,
+        error: null
       };
     },
     computed: {
@@ -149,26 +152,68 @@
         }
         const lowerCaseQuery = this.searchQuery.toLowerCase();
         return this.users.filter(user =>
-          user.name.toLowerCase().includes(lowerCaseQuery) ||
+          user.firstName.toLowerCase().includes(lowerCaseQuery) ||
+          user.lastName.toLowerCase().includes(lowerCaseQuery) ||
           user.email.toLowerCase().includes(lowerCaseQuery)
         );
       }
     },
+    async mounted() {
+      await this.loadUsers();
+    },
     methods: {
       /**
-       * Returns the appropriate CSS class for the user status.
-       * @param {string} status - The status of the user.
+       * Charge la liste des utilisateurs depuis l'API
+       */
+      async loadUsers() {
+        this.loading = true;
+        this.error = null;
+        
+        try {
+          const response = await userService.getAllUsers();
+          this.users = response.data.data || [];
+          /* notificationService.success('Liste des utilisateurs chargée avec succès'); */
+        } catch (error) {
+          console.error('Erreur lors du chargement des utilisateurs:', error);
+          this.error = error.response?.data?.message || 'Erreur lors du chargement des utilisateurs';
+          notificationService.error(this.error);
+        } finally {
+          this.loading = false;
+        }
+      },
+
+      /**
+       * Génère les initiales d'un utilisateur
+       */
+      getUserInitials(firstName, lastName) {
+        return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
+      },
+
+      /**
+       * Returns the appropriate CSS class for the user role.
+       * @param {string} role - The role of the user.
        * @returns {string} - The Tailwind CSS classes.
        */
-      getStatusClass(status) {
-        const statusMap = {
-          'Actif': 'bg-green-100 text-green-800',
-          'Inactif': 'bg-gray-200 text-gray-800',
-          'En attente': 'bg-yellow-100 text-yellow-800',
-          'Banni': 'bg-red-100 text-red-800',
+      getRoleClass(role) {
+        const roleMap = {
+          'admin': 'bg-purple-100 text-purple-800',
+          'user': 'bg-blue-100 text-blue-800',
+          'moderator': 'bg-green-100 text-green-800',
         };
-        return statusMap[status] || 'bg-gray-100 text-gray-800';
+        return roleMap[role] || 'bg-gray-100 text-gray-800';
       },
+
+      /**
+       * Returns the appropriate CSS class for the user status.
+       * @param {boolean} isActive - The status of the user.
+       * @returns {string} - The Tailwind CSS classes.
+       */
+      getStatusClass(isActive) {
+        return isActive 
+          ? 'bg-green-100 text-green-800' 
+          : 'bg-gray-200 text-gray-800';
+      },
+
       /**
        * Formats a date string to a more readable format (DD/MM/YYYY).
        * @param {string} dateString - The date string to format.
@@ -179,13 +224,70 @@
         const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
         return new Date(dateString).toLocaleDateString('fr-FR', options);
       },
+
       /**
-       * Placeholder function to navigate to a user's profile.
+       * Navigate to user profile view
        * @param {object} user - The user object.
        */
       viewProfile(user) {
         console.log('Viewing profile for user:', user.id);
-        alert(`Affichage du profil de ${user.name}`);
+        notificationService.info(`Affichage du profil de ${user.firstName} ${user.lastName}`);
+        // TODO: Navigate to user detail page
+      },
+
+      /**
+       * Navigate to edit user page
+       * @param {object} user - The user object.
+       */
+      editUser(user) {
+        console.log('Editing user:', user.id);
+        notificationService.info(`Modification de l'utilisateur ${user.firstName} ${user.lastName}`);
+        // TODO: Navigate to edit user page
+      },
+
+      /**
+       * Toggle user active status
+       * @param {object} user - The user object.
+       */
+      async toggleUserStatus(user) {
+        try {
+          await userService.toggleUserStatus(user.id);
+          // Reload users to get updated data
+          await this.loadUsers();
+          
+          const action = user.isActive ? 'désactivé' : 'activé';
+          notificationService.success(
+            `Utilisateur ${user.firstName} ${user.lastName} ${action} avec succès`,
+            'Statut modifié'
+          );
+        } catch (error) {
+          console.error('Erreur lors du changement de statut:', error);
+          const errorMessage = error.response?.data?.message || 'Erreur lors du changement de statut';
+          notificationService.error(errorMessage, 'Erreur de modification');
+        }
+      },
+
+      /**
+       * Delete user
+       * @param {object} user - The user object.
+       */
+      async deleteUser(user) {
+        if (confirm(`Êtes-vous sûr de vouloir supprimer l'utilisateur ${user.firstName} ${user.lastName} ?`)) {
+          try {
+            await userService.deleteUser(user.id);
+            // Reload users to get updated data
+            await this.loadUsers();
+            
+            notificationService.success(
+              `Utilisateur ${user.firstName} ${user.lastName} supprimé avec succès`,
+              'Utilisateur supprimé'
+            );
+          } catch (error) {
+            console.error('Erreur lors de la suppression:', error);
+            const errorMessage = error.response?.data?.message || 'Erreur lors de la suppression';
+            notificationService.error(errorMessage, 'Erreur de suppression');
+          }
+        }
       },
     },
   };

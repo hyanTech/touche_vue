@@ -25,6 +25,9 @@
                 </div>
             </main>
         </div>
+
+        <!-- Notification Container -->
+        <NotificationContainer />
     </div>
 </template>
 
@@ -33,13 +36,15 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import Sidebar from '../components/admin/Sidebar.vue'
 import Navbar from '../components/admin/Navbar.vue'
+import NotificationContainer from '../components/NotificationContainer.vue'
 import { adminMenu, getActiveMenu } from '../config/adminMenu.js'
 
 export default {
     name: 'AdminLayout',
     components: {
         Sidebar,
-        Navbar
+        Navbar,
+        NotificationContainer
     },
     props: {
         pageTitle: {

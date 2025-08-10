@@ -5,53 +5,29 @@ import apiClient from './api.js'
 const AUTH_TOKEN_KEY = 'authToken'
 const USER_INFO_KEY = 'userInfo'
 
-// Fonction pour décoder un JWT (sans vérification de signature)
-function decodeJWT(token) {
-  try {
-    const base64Url = token.split('.')[1]
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
-    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
-    }).join(''))
-    return JSON.parse(jsonPayload)
-  } catch (error) {
-    console.error('Erreur lors du décodage du JWT:', error)
-    return null
-  }
-}
-
-// Fonction pour vérifier l'expiration d'un token
-function isTokenExpired(token) {
-  try {
-    const decoded = decodeJWT(token)
-    if (!decoded || !decoded.exp) {
-      return true // Considérer comme expiré si pas d'expiration
-    }
-    
-    const currentTime = Math.floor(Date.now() / 1000)
-    return decoded.exp < currentTime
-  } catch (error) {
-    console.error('Erreur lors de la vérification d\'expiration:', error)
-    return true // Considérer comme expiré en cas d'erreur
-  }
-}
-
 // Service d'authentification
 export const authService = {
   // Vérifier si l'utilisateur est connecté
-  isAuthenticated() {
+  async isAuthenticated() {
     const token = this.getToken()
     if (!token) {
       return false
     }
     
-    // Vérifier l'expiration du token
-    if (isTokenExpired(token)) {
-      this.logout() // Nettoyer le token expiré
+    // Vérifier la validité du token avec le serveur
+    try {
+      const isValid = await this.verifyToken()
+      if (!isValid) {
+        this.logout() // Nettoyer le token invalide
+        return false
+      }
+      
+      return true
+    } catch (error) {
+      console.error('Erreur lors de la vérification d\'authentification:', error)
+      this.logout()
       return false
     }
-    
-    return true
   },
 
   // Obtenir le token depuis localStorage
@@ -83,6 +59,47 @@ export const authService = {
   // Supprimer les informations utilisateur
   removeUserInfo() {
     localStorage.removeItem(USER_INFO_KEY)
+  },
+
+  // Vérifier le token avec le serveur
+  async verifyToken() {
+    try {
+      const token = this.getToken()
+      if (!token) {
+        return false
+      }
+
+      const response = await apiClient.get('/auth/verify')
+      
+      // Si on reçoit un statut 200, le token est valide
+      if (response.status === 200 && response.data.success) {
+        // Mettre à jour les informations utilisateur avec les données reçues
+        if (response.data.data) {
+          this.setUserInfo(response.data.data)
+        }
+        return true
+      }
+      
+      return false
+    } catch (error) {
+      console.error('Erreur lors de la vérification du token:', error)
+      
+      // Gérer les différents codes d'erreur
+      if (error.response?.status === 401) {
+        // Token invalide ou expiré
+        console.log('Token invalide (401)')
+        this.logout()
+        return false
+      } else if (error.response?.status === 404) {
+        // Route non trouvée
+        console.log('Route de vérification non trouvée (404)')
+        return false
+      } else {
+        // Autres erreurs (500, etc.)
+        console.log('Erreur serveur lors de la vérification du token')
+        return false
+      }
+    }
   },
 
   // Connexion - adapté à votre API
@@ -128,47 +145,54 @@ export const authService = {
     }
   },
 
+  // Changer le mot de passe
+  async changePassword(currentPassword, newPassword) {
+    try {
+      const response = await apiClient.post('/auth/change-password', {
+        currentPassword,
+        newPassword
+      })
+
+      if (response.data.success) {
+        return { 
+          success: true, 
+          message: response.data.message 
+        }
+      } else {
+        return { 
+          success: false, 
+          error: response.data.message || 'Erreur lors du changement de mot de passe' 
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors du changement de mot de passe:', error)
+      
+      // Gestion des erreurs de validation
+      if (error.response?.status === 400 && error.response?.data?.errors) {
+        const validationErrors = error.response.data.errors
+        const errorMessage = validationErrors.map(err => `${err.field}: ${err.message}`).join(', ')
+        return { 
+          success: false, 
+          error: errorMessage 
+        }
+      }
+      
+      return { 
+        success: false, 
+        error: error.response?.data?.message || 'Erreur lors du changement de mot de passe' 
+      }
+    }
+  },
+
   // Déconnexion
   logout() {
     this.removeToken()
     this.removeUserInfo()
   },
 
-  // Vérifier la validité du token (vérification locale + optionnelle avec le serveur)
-  async validateToken(forceServerCheck = false) {
-    try {
-      const token = this.getToken()
-      if (!token) {
-        return false
-      }
-
-      // Vérification locale de l'expiration
-      if (isTokenExpired(token)) {
-        console.log('Token expiré détecté localement')
-        this.logout()
-        return false
-      }
-
-      // Vérification optionnelle avec le serveur (pour les cas où on veut s'assurer que le token n'a pas été révoqué)
-      if (forceServerCheck) {
-        try {
-          const response = await apiClient.get('/auth/validate')
-          return response.status === 200
-        } catch (error) {
-          console.error('Erreur de validation du token avec le serveur:', error)
-          if (error.response?.status === 401) {
-            this.logout()
-          }
-          return false
-        }
-      }
-
-      // Si pas de vérification serveur forcée, retourner true si le token n'est pas expiré
-      return true
-    } catch (error) {
-      console.error('Erreur de validation du token:', error)
-      return false
-    }
+  // Vérifier la validité du token (toujours avec le serveur)
+  async validateToken() {
+    return await this.verifyToken()
   },
 
   // Obtenir le nom complet de l'utilisateur
@@ -180,62 +204,42 @@ export const authService = {
     return userInfo?.email || 'Utilisateur Admin'
   },
 
-  // Obtenir les informations du token décodé
+  // Obtenir les informations du token (depuis les données utilisateur stockées)
   getTokenInfo() {
-    const token = this.getToken()
-    if (!token) {
-      return null
-    }
-    
-    const decoded = decodeJWT(token)
-    if (!decoded) {
+    const userInfo = this.getUserInfo()
+    if (!userInfo) {
       return null
     }
     
     return {
-      exp: decoded.exp,
-      iat: decoded.iat,
-      userId: decoded.userId || decoded.sub,
-      email: decoded.email,
-      role: decoded.role,
-      isExpired: isTokenExpired(token),
-      expiresIn: decoded.exp ? Math.max(0, decoded.exp - Math.floor(Date.now() / 1000)) : 0
+      userId: userInfo.id,
+      email: userInfo.email,
+      role: userInfo.role,
+      firstName: userInfo.firstName,
+      lastName: userInfo.lastName
     }
-  },
-
-  // Vérifier si le token expire bientôt (dans les 5 minutes)
-  isTokenExpiringSoon() {
-    const tokenInfo = this.getTokenInfo()
-    if (!tokenInfo) {
-      return false
-    }
-    
-    // Avertir si le token expire dans les 5 minutes
-    return tokenInfo.expiresIn < 300 // 5 minutes = 300 secondes
   }
 }
 
 // Fonction utilitaire pour vérifier l'authentification
 export const requireAuth = async (to, from, next) => {
-  const isAuth = authService.isAuthenticated()
-  
-  if (!isAuth) {
-    // Rediriger vers la page de connexion si non authentifié
-    next({ name: 'Login' })
-    return
-  }
+  try {
+    const isAuth = await authService.isAuthenticated()
+    
+    if (!isAuth) {
+      // Rediriger vers la page de connexion si non authentifié
+      next({ name: 'Login' })
+      return
+    }
 
-  // Vérifier la validité du token (vérification locale uniquement)
-  const isValid = await authService.validateToken(false) // false = pas de vérification serveur
-  if (!isValid) {
+    // Passer les informations utilisateur à la route
+    to.meta.userInfo = authService.getUserInfo()
+    next()
+  } catch (error) {
+    console.error('Erreur lors de la vérification d\'authentification:', error)
     authService.logout()
     next({ name: 'Login' })
-    return
   }
-
-  // Passer les informations utilisateur à la route
-  to.meta.userInfo = authService.getUserInfo()
-  next()
 }
 
 export default authService 

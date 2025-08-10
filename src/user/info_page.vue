@@ -146,14 +146,14 @@
                                     <span class="inline-flex items-center pl-3 pr-2 py-2 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-600 text-sm">
                                         🇹🇬 +228
                                     </span>
-                                    <input type="tel" 
-                                           id="numeroPaiement" 
-                                           v-model="form.numeroPaiement" 
-                                           maxlength="10" 
-                                           placeholder="XX XX XX XX"
-                                           class="w-full px-4 py-2 border rounded-r-lg focus:ring-blue-500 focus:border-blue-500 transition"
-                                           :class="{ 'border-red-500 focus:border-red-500 focus:ring-red-500': numeroPaiementError }"
-                                           @input="formatNumeroPaiement">
+                                                                         <input type="tel" 
+                                            id="numeroPaiement" 
+                                            v-model="form.numeroPaiement" 
+                                            maxlength="11" 
+                                            placeholder="XX XX XX XX"
+                                            class="w-full px-4 py-2 border rounded-r-lg focus:ring-blue-500 focus:border-blue-500 transition"
+                                            :class="{ 'border-red-500 focus:border-red-500 focus:ring-red-500': numeroPaiementError }"
+                                            @input="formatNumeroPaiement">
                                 </div>
                                 <p v-if="numeroPaiementError" class="text-red-600 text-sm mt-1">{{ numeroPaiementError }}</p>
                             </div>
@@ -486,7 +486,13 @@ const formatNumeroPaiement = (event) => {
     }
     
     // Add spaces for readability: XX XX XX XX
-    let formattedValue = value.replace(/(\d{2})(?=\d)/g, '$1 ').trim();
+    let formattedValue = '';
+    for (let i = 0; i < value.length; i++) {
+      if (i > 0 && i % 2 === 0) {
+        formattedValue += ' ';
+      }
+      formattedValue += value[i];
+    }
     form.value.numeroPaiement = formattedValue;
 };
 

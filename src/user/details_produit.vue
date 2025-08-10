@@ -96,9 +96,9 @@
                 </span>
                 <!-- Quantité en stock -->
                 <div class="mt-2 text-sm text-text-secondary">
-                  <i class="fas fa-boxes mr-1"></i>
+                  <!-- <i class="fas fa-boxes mr-1"></i> -->
                   <span v-if="product.stock > 0">
-                    {{ product.stock }} {{ product.stock === 1 ? 'article' : 'articles' }} en stock
+                    <!-- {{ product.stock }} {{ product.stock === 1 ? 'article' : 'articles' }} en stock -->
                   </span>
                   <span v-else class="text-error-color">
                     Rupture de stock

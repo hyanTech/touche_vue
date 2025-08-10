@@ -55,13 +55,6 @@ export const adminMenu = [
         ]
     },
     { 
-        name: 'Stock', 
-        route: '/admin/stock', 
-        icon: 'fas fa-warehouse',
-        hasSubmenu: false,
-        component: 'Stock'
-    },
-    { 
         name: 'Commandes', 
         route: '#', 
         icon: 'fas fa-shopping-bag',

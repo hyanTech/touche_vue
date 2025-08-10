@@ -2,6 +2,28 @@
   <DefaultLayout>
     <!-- Section Héros -->
     <section
+      v-if="!pubLoading && pubData"
+      class="bg-primary rounded-lg shadow-lg text-white p-8 md:p-12 mb-12 flex flex-col md:flex-row items-center">
+      <div class="md:w-1/2 text-center md:text-left mb-8 md:mb-0">
+        <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 leading-tight">{{ pubData.titre_pub1 || 'Collection Été 2025' }}</h1>
+        <p class="text-lg text-white/80 mb-6">{{ pubData.sous_titre1 || 'Découvrez nos nouveautés et profitez de -30% sur une sélection d\'articles.' }}</p>
+        <a :href="pubData.url1 || '#'"
+          class="bg-white text-primary font-bold py-3 px-8 rounded-full hover:bg-gray-200 transition duration-300 transform hover:scale-105 cursor-pointer">{{ pubData.btn1 || 'Découvrir' }}</a>
+      </div>
+      <div class="md:w-1/2">
+        <img 
+  :src="pubData?.img1" 
+  :alt="pubData?.titre_pub1 || 'Image héro'" 
+  class="w-full h-full object-contain "
+  @error="handleImageError"
+/>
+
+      </div>
+    </section>
+
+    <!-- Section Héros par défaut si pas de pub -->
+    <section
+      v-else-if="!pubLoading"
       class="bg-primary rounded-lg shadow-lg text-white p-8 md:p-12 mb-12 flex flex-col md:flex-row items-center">
       <div class="md:w-1/2 text-center md:text-left mb-8 md:mb-0">
         <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 leading-tight">Collection Été 2025</h1>
@@ -10,8 +32,22 @@
         <a href="#"
           class="bg-white text-primary font-bold py-3 px-8 rounded-full hover:bg-gray-200 transition duration-300 transform hover:scale-105 cursor-pointer">Découvrir</a>
       </div>
-      <div class="md:w-1/2"><img src="https://placehold.co/600x400/FFFFFF/FAA4BD?text=Style+d'été"
+      <div class="md:w-1/2"><img src="https://placehold.co/600x400/FFFFFF/FAA4BD"
           alt="Bannière promotionnelle" class="rounded-lg shadow-2xl w-full"></div>
+    </section>
+
+    <!-- Loading pour la section héros -->
+    <section v-else class="bg-primary rounded-lg shadow-lg text-white p-8 md:p-12 mb-12 flex flex-col md:flex-row items-center">
+      <div class="md:w-1/2 text-center md:text-left mb-8 md:mb-0">
+        <div class="animate-pulse">
+          <div class="h-12 bg-white/20 rounded mb-4"></div>
+          <div class="h-6 bg-white/20 rounded mb-6"></div>
+          <div class="h-10 bg-white/20 rounded w-32"></div>
+        </div>
+      </div>
+      <div class="md:w-1/2">
+        <div class="animate-pulse bg-white/20 rounded-lg h-64"></div>
+      </div>
     </section>
 
     <!-- Section Catégories -->
@@ -56,7 +92,7 @@
           <div class="w-full border-t border-border-color"></div>
         </div>
         <div class="relative flex justify-center">
-          <h2 class="bg-bg-secondary px-6 text-3xl font-bold text-text-primary">Nos Produits</h2>
+          <h2 class="bg-secondary px-6 text-3xl font-bold text-text-primary">Nouveaux Produits</h2>
         </div>
       </div>
 
@@ -154,7 +190,24 @@
     </section>
 
     <!-- Bannière promotionnelle intermédiaire -->
-    <section class="mb-12">
+    <section v-if="!pubLoading && pubData" class="mb-12">
+      <div class="relative bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+                 <img :src="pubData.img2" 
+              :alt="pubData.titre_pub2 || 'Bannière de promotion'"
+              class="absolute inset-0 w-full h-full object-cover opacity-30"
+              @error="handleImageError">
+        <div class="relative p-12 text-center text-white">
+          <h3 class="text-sm font-bold uppercase tracking-widest text-primary">Offre Limitée</h3>
+          <h2 class="text-4xl font-extrabold mt-2 mb-4">{{ pubData.titre_pub2 || 'Jusqu\'à -50% sur les fins de série' }}</h2>
+          <p class="max-w-2xl mx-auto text-gray-300 mb-6">{{ pubData.sous_titre2 || 'Ne manquez pas nos meilleures offres sur une sélection d\'articles. C\'est le moment de se faire plaisir !' }}</p>
+          <a :href="pubData.url2 || '#'"
+            class="bg-primary text-white font-bold py-3 px-8 rounded-full hover:bg-hover-color transition duration-300 transform hover:scale-105 cursor-pointer">{{ pubData.btn2 || 'Voir les promotions' }}</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bannière par défaut si pas de pub -->
+    <section v-else-if="!pubLoading" class="mb-12">
       <div class="relative bg-gray-800 rounded-lg shadow-lg overflow-hidden">
         <img src="https://placehold.co/1200x400/1F2937/FFFFFF?text=Promo" alt="Bannière de promotion"
           class="absolute inset-0 w-full h-full object-cover opacity-30">
@@ -166,6 +219,21 @@
           <a href="#"
             class="bg-primary text-white font-bold py-3 px-8 rounded-full hover:bg-hover-color transition duration-300 transform hover:scale-105 cursor-pointer">Voir
             les promotions</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Loading pour la bannière -->
+    <section v-else class="mb-12">
+      <div class="relative bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+        <div class="absolute inset-0 w-full h-full bg-gray-700 opacity-30"></div>
+        <div class="relative p-12 text-center text-white">
+          <div class="animate-pulse">
+            <div class="h-4 bg-white/20 rounded w-32 mx-auto mb-2"></div>
+            <div class="h-10 bg-white/20 rounded w-96 mx-auto mb-4"></div>
+            <div class="h-6 bg-white/20 rounded w-80 mx-auto mb-6"></div>
+            <div class="h-12 bg-white/20 rounded w-48 mx-auto"></div>
+          </div>
         </div>
       </div>
     </section>
@@ -186,7 +254,7 @@ import { useRouter } from 'vue-router';
 import DefaultLayout from '../layouts/DefaultLayout.vue';
 import CategoryManager from '../components/CategoryManager.vue';
 import AddToCartModal from '../components/AddToCartModal.vue';
-import { productService } from '../config/api.js';
+import { productService, headerService } from '../config/api.js';
 import { getImageUrl, handleImageError, formatPrice, getStockStatusText, getStockStatusClass } from '../config/utils.js';
 import { useCart } from '../config/cart.js';
 import { useUserNotification } from '../config/userNotification.js';
@@ -202,6 +270,11 @@ const { showSuccess, showError } = useUserNotification();
 const activeProducts = ref([]);
 const productsLoading = ref(false);
 const productsError = ref('');
+
+// --- États des publicités ---
+const pubData = ref(null);
+const pubLoading = ref(true);
+const pubError = ref(null);
 
 // --- États du modal de sélection ---
 const showSelectionModal = ref(false);
@@ -269,9 +342,31 @@ const loadProducts = async () => {
   }
 };
 
+// Charger les publicités
+const loadPublicites = async () => {
+  pubLoading.value = true;
+  pubError.value = null;
+  
+  try {
+    const response = await headerService.getAllHeaders();
+    
+    if (response.data.success && response.data.data) {
+      pubData.value = response.data.data;
+    } else {
+      console.log('Aucune publicité trouvée, utilisation des valeurs par défaut');
+    }
+  } catch (error) {
+    console.error('Erreur lors du chargement des publicités:', error);
+    pubError.value = 'Erreur lors du chargement des publicités';
+  } finally {
+    pubLoading.value = false;
+  }
+};
+
 // --- Initialisation ---
 onMounted(() => {
   loadProducts();
+  loadPublicites();
 });
 </script>
 

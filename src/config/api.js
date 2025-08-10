@@ -1,7 +1,9 @@
 import axios from 'axios'
 
 // Configuration de base de l'API
-export const API_BASE_URL = 'https://toucheapi-production.up.railway.app/api'
+/* export const API_BASE_URL = 'https://toucheapi-production.up.railway.app/api' */
+
+export const API_BASE_URL = 'http://localhost:3000/api'
 
 // Création d'une instance axios avec la configuration de base
 const apiClient = axios.create({
@@ -190,6 +192,16 @@ export const productService = {
     // Supprimer une image de produit
     deleteProductImage: (productId, imageIndex) => {
         return apiClient.delete(`/products/${productId}/images/${imageIndex}`)
+    },
+
+    // Rechercher des produits
+    searchProducts: (query) => {
+        return apiClient.get('/products/search', {
+            params: { 
+                query: query,
+                _t: Date.now() // Timestamp unique pour éviter le cache
+            }
+        })
     }
 }
 
@@ -308,6 +320,168 @@ export const paymentService = {
     deletePayment: (id) => {
         return apiClient.delete(`/payments/${id}`)
     }
+}
+
+// Service pour les utilisateurs
+export const userService = {
+    // Récupérer tous les utilisateurs (admin seulement)
+    getAllUsers: () => {
+        return apiClient.get('/users')
+    },
+
+    // Récupérer un utilisateur par ID
+    getUser: (id) => {
+        return apiClient.get(`/users/${id}`)
+    },
+
+    // Créer un nouvel utilisateur
+    createUser: (userData) => {
+        return apiClient.post('/users', userData)
+    },
+
+    // Mettre à jour un utilisateur
+    updateUser: (id, userData) => {
+        return apiClient.put(`/users/${id}`, userData)
+    },
+
+    // Supprimer un utilisateur
+    deleteUser: (id) => {
+        return apiClient.delete(`/users/${id}`)
+    },
+
+    // Activer/Désactiver un utilisateur
+    toggleUserStatus: (id) => {
+        return apiClient.patch(`/users/${id}/toggle-status`)
+    },
+
+    // Changer le rôle d'un utilisateur
+    changeUserRole: (id, role) => {
+        return apiClient.patch(`/users/${id}/role`, { role })
+    },
+
+    // Récupérer le profil de l'utilisateur connecté
+    getCurrentUser: () => {
+        // Récupérer l'ID de l'utilisateur depuis les informations stockées
+        const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
+        const userId = userInfo.id
+        
+        if (!userId) {
+            return Promise.reject(new Error('ID utilisateur non trouvé'))
+        }
+        
+        return apiClient.get(`/users/${userId}`)
+    },
+
+    // Mettre à jour le profil de l'utilisateur connecté
+    updateCurrentUser: (userData) => {
+        // Récupérer l'ID de l'utilisateur depuis les informations stockées
+        const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
+        const userId = userInfo.id
+        
+        if (!userId) {
+            return Promise.reject(new Error('ID utilisateur non trouvé'))
+        }
+        
+        return apiClient.put(`/users/${userId}`, userData)
+    }
+}
+
+// Service pour les publicités
+export const headerService = {
+  // Récupérer toutes les publicités
+  getAllHeaders: () => {
+    return apiClient.get('/headers')
+  },
+  // Récupérer une publicité par ID
+  getHeader: (id) => {
+    return apiClient.get(`/headers/${id}`)
+  },
+  // Créer une nouvelle publicité
+  createHeader: (pubData) => {
+    // Vérifier si pubData est un FormData (avec des fichiers)
+    if (pubData instanceof FormData) {
+      return apiClient.post('/headers', pubData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+    }
+    // Sinon, envoyer comme JSON normal
+    return apiClient.post('/headers', pubData)
+  },
+  // Mettre à jour une publicité
+  updateHeader: (id, pubData) => {
+    // Vérifier si pubData est un FormData (avec des fichiers)
+    if (pubData instanceof FormData) {
+      return apiClient.put(`/headers/${id}`, pubData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+    }
+    // Sinon, envoyer comme JSON normal
+    return apiClient.put(`/headers/${id}`, pubData)
+  },
+  // Supprimer une publicité
+  deleteHeader: (id) => {
+    return apiClient.delete(`/headers/${id}`)
+  }
+}
+
+// Service pour les contacts
+export const contactService = {
+  // Récupérer tous les contacts
+  getAllContacts: () => {
+    return apiClient.get('/contacts')
+  },
+
+  // Récupérer un contact par ID
+  getContact: (id) => {
+    return apiClient.get(`/contacts/${id}`)
+  },
+
+  // Créer un nouveau contact
+  createContact: (contactData) => {
+    return apiClient.post('/contacts', contactData)
+  },
+
+  // Mettre à jour un contact
+  updateContact: (id, contactData) => {
+    return apiClient.put(`/contacts/${id}`, contactData)
+  },
+
+  // Supprimer un contact
+  deleteContact: (id) => {
+    return apiClient.delete(`/contacts/${id}`)
+  }
+}
+
+// Service pour les informations du site
+export const informationService = {
+  // Récupérer toutes les informations
+  getAllInformations: () => {
+    return apiClient.get('/informations')
+  },
+
+  // Récupérer une information par ID
+  getInformation: (id) => {
+    return apiClient.get(`/informations/${id}`)
+  },
+
+  // Créer une nouvelle information
+  createInformation: (informationData) => {
+    return apiClient.post('/informations', informationData)
+  },
+
+  // Mettre à jour une information
+  updateInformation: (id, informationData) => {
+    return apiClient.put(`/informations/${id}`, informationData)
+  },
+
+  // Supprimer une information
+  deleteInformation: (id) => {
+    return apiClient.delete(`/informations/${id}`)
+  }
 }
 
 export default apiClient 

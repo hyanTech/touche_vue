@@ -34,7 +34,7 @@
                 <div v-if="profileDropdownOpen" @click.away="profileDropdownOpen = false" 
                      class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
                     <div class="px-4 py-2 border-b border-gray-100">
-                        <p class="text-sm font-medium text-gray-900">{{ userInfo?.name || 'Admin User' }}</p>
+                        <p class="text-sm font-medium text-gray-900">{{ userInfo?.firstName + ' ' + userInfo?.lastName || 'Admin User' }}</p>
                         <p class="text-xs text-gray-500">{{ userInfo?.email || 'admin@example.com' }}</p>
                     </div>
                     <a href="/admin/settings/profil" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">

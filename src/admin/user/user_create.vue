@@ -1,113 +1,228 @@
 <template>
-    <div class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
-      <!-- Main Card -->
-      <div class="w-full max-w-4xl bg-white rounded-2xl shadow-xl flex flex-col lg:flex-row overflow-hidden">
-        
-        <!-- Colonne de gauche (Branding & Info) -->
-        <div class="w-full lg:w-5/12 p-8 md:p-12 flex flex-col justify-center items-center text-center lg:border-r lg:border-gray-200">
-          <div class="mb-8">
-            <i class="fas fa-user-plus fa-3x text-indigo-600"></i>
-          </div>
-          <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-3">Bienvenue</h1>
-          <p class="text-gray-600 text-lg">Créez un compte en quelques secondes pour débloquer toutes nos fonctionnalités.</p>
+    <div class="bg-gray-100 min-h-screen p-4 sm:p-6 lg:p-8">
+      <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="mb-6">
+          <h1 class="text-3xl font-bold text-gray-800">Ajouter un utilisateur</h1>
+          <p class="text-sm text-gray-500 mt-1">Créez un nouvel utilisateur pour votre plateforme.</p>
         </div>
-  
-        <!-- Colonne de droite (Formulaire) -->
-        <div class="w-full lg:w-7/12 p-8 md:p-12">
-          <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-2">Ajouter un utilisateur</h2>
-          <p class="text-gray-600 mb-8">Remplissez les champs pour continuer.</p>
-          
-          <form class="space-y-6" @submit.prevent="createUser">
-            <!-- Champ Nom complet -->
-            <div>
-              <label for="fullname" class="block text-sm font-medium text-gray-700 mb-1">Nom complet</label>
-              <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <i class="fas fa-user text-gray-400"></i>
+
+        <!-- Loading State -->
+        <div v-if="loading" class="bg-white rounded-xl shadow-md p-8 text-center">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p class="mt-4 text-gray-600">Création de l'utilisateur...</p>
+        </div>
+
+        <!-- Error State -->
+        <div v-else-if="error" class="bg-white rounded-xl shadow-md p-8 text-center">
+          <div class="text-red-600 mb-4">
+            <svg class="h-12 w-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+            </svg>
+          </div>
+          <h3 class="text-lg font-medium text-gray-900 mb-2">Erreur lors de la création</h3>
+          <p class="text-gray-600 mb-4">{{ error }}</p>
+        </div>
+
+        <!-- Form Card -->
+        <div v-else class="bg-white rounded-xl shadow-md overflow-hidden">
+          <div class="p-6 sm:p-8">
+            <form @submit.prevent="createUser" class="space-y-6">
+              <!-- Nom et Prénom -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                  <label for="firstName" class="block text-sm font-medium text-gray-700 mb-2">Prénom *</label>
+                  <input 
+                    v-model="user.firstName" 
+                    id="firstName" 
+                    name="firstName" 
+                    type="text" 
+                    required 
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Jean">
                 </div>
-                <input v-model="user.fullname" id="fullname" name="fullname" type="text" required class="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="John Doe">
+                <div>
+                  <label for="lastName" class="block text-sm font-medium text-gray-700 mb-2">Nom *</label>
+                  <input 
+                    v-model="user.lastName" 
+                    id="lastName" 
+                    name="lastName" 
+                    type="text" 
+                    required 
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Dupont">
+                </div>
               </div>
-            </div>
-  
-            <!-- Champ Email -->
-            <div>
-              <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Adresse e-mail</label>
-              <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <i class="fas fa-envelope text-gray-400"></i>
-                </div>
-                <input v-model="user.email" id="email" name="email" type="email" autocomplete="email" required class="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="exemple@domaine.com">
+
+              <!-- Email -->
+              <div>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Adresse e-mail *</label>
+                <input 
+                  v-model="user.email" 
+                  id="email" 
+                  name="email" 
+                  type="email" 
+                  required 
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="jean.dupont@example.com">
               </div>
-            </div>
-  
-            <!-- Champ Mot de passe -->
-            <div>
-              <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
-              <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <i class="fas fa-lock text-gray-400"></i>
-                </div>
-                <input v-model="user.password" id="password" name="password" type="password" autocomplete="new-password" required class="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="••••••••">
+
+              <!-- Téléphone -->
+              <!-- <div>
+                <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">Téléphone (optionnel)</label>
+                <input 
+                  v-model="user.phone" 
+                  id="phone" 
+                  name="phone" 
+                  type="tel" 
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="0123456789">
+              </div> -->
+
+              <!-- Adresse -->
+              <div>
+                <label for="address" class="block text-sm font-medium text-gray-700 mb-2">Adresse</label>
+                <textarea 
+                  v-model="user.address" 
+                  id="address" 
+                  name="address" 
+                  rows="3"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="123 Rue de la Séduction, 75001 Paris"></textarea>
               </div>
-            </div>
-            
-            <!-- Champ Rôle -->
-            <div>
-              <label for="role" class="block text-sm font-medium text-gray-700 mb-1">Rôle</label>
-              <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <i class="fas fa-user-tag text-gray-400"></i>
-                </div>
-                <select v-model="user.role" id="role" name="role" class="w-full appearance-none pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
-                  <option>Utilisateur</option>
-                  <option>Administrateur</option>
-                  <option>Éditeur</option>
+
+              <!-- Mot de passe -->
+              <div>
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Mot de passe *</label>
+                <input 
+                  v-model="user.password" 
+                  id="password" 
+                  name="password" 
+                  type="password" 
+                  required 
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="••••••••">
+              </div>
+              
+              <!-- Rôle -->
+              <div>
+                <label for="role" class="block text-sm font-medium text-gray-700 mb-2">Rôle *</label>
+                <select 
+                  v-model="user.role" 
+                  id="role" 
+                  name="role" 
+                  required
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                  <option value="user">Utilisateur</option>
+                  <option value="admin">Administrateur</option>
                 </select>
-                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <i class="fas fa-chevron-down text-gray-400"></i>
-                </div>
               </div>
-            </div>
-  
-            <!-- Bouton de soumission -->
-            <div>
-              <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
-                Créer le compte
-              </button>
-            </div>
-          </form>
+
+              <!-- Statut -->
+              <div>
+                <label class="flex items-center">
+                  <input 
+                    v-model="user.isActive" 
+                    type="checkbox" 
+                    class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                  <span class="ml-2 text-sm text-gray-700">Utilisateur actif</span>
+                </label>
+              </div>
+
+              <!-- Boutons d'action -->
+              <div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+                <router-link 
+                  :to="{ name: 'User' }" 
+                  class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                  Annuler
+                </router-link>
+                <button 
+                  type="submit" 
+                  :disabled="loading || !isFormValid"
+                  class="px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                  {{ loading ? 'Création...' : 'Créer l\'utilisateur' }}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </div>
   </template>
   
   <script>
+  import { userService } from '../../config/api.js'
+  import { notificationService } from '../../config/notification.js'
+
   export default {
     name: 'UserCreate',
     data() {
       return {
         user: {
-          fullname: '',
+          firstName: '',
+          lastName: '',
           email: '',
+          
+          address: '',
           password: '',
-          role: 'Utilisateur' // Valeur par défaut
-        }
+          role: 'user',
+          isActive: true
+        },
+        loading: false,
+        error: null
+      }
+    },
+    computed: {
+      isFormValid() {
+        return this.user.firstName && 
+               this.user.lastName && 
+               this.user.email && 
+               this.user.password && 
+               this.user.role
       }
     },
     methods: {
-      createUser() {
-        // Ici, vous mettriez votre logique pour envoyer les données à une API
-        console.log('Données de l\'utilisateur à créer :', this.user);
-        // Vous pourriez ensuite réinitialiser le formulaire ou naviguer vers une autre page
-        // alert(`Utilisateur ${this.user.fullname} créé !`);
+      async createUser() {
+        this.loading = true;
+        this.error = null;
+        
+        try {
+          await userService.createUser(this.user);
+          
+          notificationService.success(
+            `Utilisateur ${this.user.firstName} ${this.user.lastName} créé avec succès`,
+            'Utilisateur créé'
+          );
+          
+          // Redirection vers la liste des utilisateurs avec un message de succès
+          this.$router.push({ 
+            name: 'User',
+            query: { success: 'Utilisateur créé avec succès' }
+          });
+        } catch (error) {
+          console.error('Erreur lors de la création de l\'utilisateur:', error);
+          
+          // Gestion des erreurs de validation de l'API
+          if (error.response?.status === 400 && error.response?.data?.errors) {
+            const apiErrors = error.response.data.errors;
+            let errorMessage = 'Erreurs de validation :\n';
+            apiErrors.forEach(err => {
+              errorMessage += `- ${err.field}: ${err.message}\n`;
+            });
+            notificationService.error(errorMessage, 'Erreur de validation');
+          } else {
+            this.error = error.response?.data?.message || 'Erreur lors de la création de l\'utilisateur';
+            notificationService.error(this.error, 'Erreur de création');
+          }
+        } finally {
+          this.loading = false;
+        }
       }
     }
   }
   </script>
   
   <style scoped>
-  /* Pour que ce composant fonctionne, assurez-vous que Tailwind CSS et Font Awesome 
-     sont inclus dans votre projet Vue.js global, généralement dans votre 
-     fichier main.js ou index.html. */
+  /* Additional scoped styles can be added here if needed. */
   </style>
   
