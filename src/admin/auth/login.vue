@@ -97,7 +97,7 @@
             
             // Redirection vers le dashboard admin après 1 seconde
             setTimeout(() => {
-              this.router.push('/admin/dash')
+              this.router.push('/admin/dashboard')
             }, 1000)
           } else {
             this.errorMessage = result.error || 'Erreur de connexion'
