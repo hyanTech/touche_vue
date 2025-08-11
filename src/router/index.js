@@ -38,6 +38,8 @@ import LegalMentions from '../admin/settings/LegalMentions.vue'
 import Pub from '../admin/settings/pub/pub.vue'
 import EditPub from '../admin/settings/pub/edit_pub.vue'
 import CreatePub from '../admin/settings/pub/create_pub.vue'
+import Terme from '../user/terme.vue'
+import Politicy from '../user/politicy.vue'
 
 const routes = [
   {
@@ -56,12 +58,12 @@ const routes = [
     component: Category
   },
   {
-    path: '/produits/category/:id',
+    path: '/produits/category/:id/:slug',
     name: 'ProduitCat',
     component: ProduitCat
   },
   {
-    path: '/details_produit/:id?',
+    path: '/details_produit/:id',
     name: 'DetailsProduit',
     component: DetailsProduit
   },
@@ -74,6 +76,16 @@ const routes = [
     path: '/contact',
     name: 'Contact',
     component: Contact
+  },
+  {
+    path: '/terme',
+    name: 'Terme',
+    component: Terme
+  },
+  {
+    path: '/politicy',
+    name: 'Politicy',
+    component: Politicy
   },
   {
     path: '/pay_confirm',

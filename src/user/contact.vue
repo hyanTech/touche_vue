@@ -24,47 +24,57 @@
                             Nous sommes à votre écoute pour toute demande. Vous pouvez nous joindre via les canaux ci-dessous.
                         </p>
 
-                        <!-- Informations de contact -->
+                        <!-- Informations de contact dynamiques -->
                         <div class="space-y-6">
                             <div class="flex items-start space-x-4">
                                 <div class="flex-shrink-0 w-8 text-center"><i class="fa-solid fa-shop text-primary text-2xl"></i></div>
                                 <div>
                                     <h3 class="font-semibold text-text-primary">Adresse</h3>
-                                    <p class="text-text-secondary">Boutique en ligne</p>
+                                    <p class="text-text-secondary">{{ contactInfo.adresse || 'Boutique en ligne' }}</p>
                                 </div>
                             </div>
                             <div class="flex items-start space-x-4">
                                 <div class="flex-shrink-0 w-8 text-center"><i class="fa-solid fa-envelope text-primary text-2xl"></i></div>
                                 <div>
                                     <h3 class="font-semibold text-text-primary">Email</h3>
-                                    <a href="mailto:contact@maboutique.com" class="text-primary hover:underline">contact@maboutique.com</a>
+                                    <a v-if="contactInfo.email" :href="`mailto:${contactInfo.email}`" class="text-primary hover:underline">{{ contactInfo.email }}</a>
+                                    <span v-else class="text-text-secondary">contact@touchedeseduction.com</span>
                                 </div>
                             </div>
                              <div class="flex items-start space-x-4">
                                 <div class="flex-shrink-0 w-8 text-center"><i class="fa-solid fa-phone text-primary text-2xl"></i></div>
                                 <div>
                                     <h3 class="font-semibold text-text-primary">Téléphone</h3>
-                                    <a href="tel:+22800000000" class="text-primary hover:underline">+228 00 00 00 00</a>
+                                    <a v-if="contactInfo.numero" :href="`tel:${contactInfo.numero}`" class="text-primary hover:underline">{{ contactInfo.numero }}</a>
+                                    <span v-else class="text-text-secondary">+228 00 00 00 00</span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Bouton WhatsApp -->
-                        <div class="mt-8">
-                             <a href="https://wa.me/22800000000" target="_blank" class="w-full flex items-center justify-center px-6 py-3 bg-green-600 text-white font-bold rounded-lg shadow-md hover:bg-green-700 transition-colors duration-300">
+                        <!-- Bouton WhatsApp dynamique -->
+                        <div class="mt-8" v-if="contactInfo.lien_whatsapp">
+                             <a :href="contactInfo.lien_whatsapp" target="_blank" class="w-full flex items-center justify-center px-6 py-3 bg-green-600 text-white font-bold rounded-lg shadow-md hover:bg-green-700 transition-colors duration-300">
                                 <i class="fa-brands fa-whatsapp text-2xl mr-3"></i>
                                 Contacter via WhatsApp
                             </a>
                         </div>
 
-                        <!-- Réseaux Sociaux -->
+                        <!-- Réseaux Sociaux dynamiques -->
                         <div class="mt-10 text-center">
                             <h3 class="font-semibold text-text-primary mb-4">Suivez-nous</h3>
                             <div class="flex justify-center space-x-6">
-                                <a href="#" class="text-text-light hover:text-primary transition-colors"><i class="fa-brands fa-facebook-f text-2xl"></i></a>
-                                <a href="#" class="text-text-light hover:text-primary transition-colors"><i class="fa-brands fa-twitter text-2xl"></i></a>
-                                <a href="#" class="text-text-light hover:text-primary transition-colors"><i class="fa-brands fa-instagram text-2xl"></i></a>
-                                <a href="#" class="text-text-light hover:text-primary transition-colors"><i class="fa-brands fa-linkedin-in text-2xl"></i></a>
+                                <a v-if="contactInfo.lien_facebook" :href="contactInfo.lien_facebook" target="_blank" class="text-text-light hover:text-primary transition-colors">
+                                    <i class="fa-brands fa-facebook-f text-2xl"></i>
+                                </a>
+                                <a v-if="contactInfo.lien_x" :href="contactInfo.lien_x" target="_blank" class="text-text-light hover:text-primary transition-colors">
+                                    <i class="fa-brands fa-twitter text-2xl"></i>
+                                </a>
+                                <a v-if="contactInfo.lien_insta" :href="contactInfo.lien_insta" target="_blank" class="text-text-light hover:text-primary transition-colors">
+                                    <i class="fa-brands fa-instagram text-2xl"></i>
+                                </a>
+                                <a v-if="contactInfo.lien_tiktok" :href="contactInfo.lien_tiktok" target="_blank" class="text-text-light hover:text-primary transition-colors">
+                                    <i class="fa-brands fa-tiktok text-2xl"></i>
+                                </a>
                             </div>
                         </div>
 
@@ -113,8 +123,9 @@
 </template>
 
 <script>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import DefaultLayout from '../layouts/DefaultLayout.vue';
+import { contactService } from '../config/api.js';
 
 export default {
     name: 'ContactView',
@@ -122,6 +133,18 @@ export default {
         DefaultLayout
     },
     setup() {
+        // État réactif pour les informations de contact
+        const contactInfo = ref({
+            adresse: '',
+            email: '',
+            numero: '',
+            lien_whatsapp: '',
+            lien_facebook: '',
+            lien_insta: '',
+            lien_tiktok: '',
+            lien_x: ''
+        });
+
         // État réactif pour les champs du formulaire
         const form = ref({
             name: '',
@@ -129,6 +152,18 @@ export default {
             subject: '',
             message: ''
         });
+
+        // Récupérer les informations de contact depuis l'API
+        const fetchContactInfo = async () => {
+            try {
+                const response = await contactService.getContact(1);
+                if (response.data.success) {
+                    contactInfo.value = response.data.data;
+                }
+            } catch (error) {
+                console.error('Erreur lors de la récupération des informations de contact:', error);
+            }
+        };
 
         // Méthode pour gérer la soumission du formulaire
         function handleSubmit() {
@@ -145,7 +180,13 @@ export default {
             };
         }
 
+        // Charger les informations de contact au montage du composant
+        onMounted(() => {
+            fetchContactInfo();
+        });
+
         return {
+            contactInfo,
             form,
             handleSubmit
         };

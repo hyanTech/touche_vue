@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 // Configuration de base de l'API
-export const API_BASE_URL = 'https://toucheapi-production.up.railway.app/api'
+export const API_BASE_URL = 'https://api.touchedeseduction.com/api'
 
 /* export const API_BASE_URL = 'http://localhost:3000/api' */
 

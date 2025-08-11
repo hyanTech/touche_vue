@@ -52,7 +52,7 @@ export const fetchHomeCategories = async () => {
         id: category.id,
         name: category.nom,
         icon: category.icone || 'fa-solid fa-tag',
-        href: `/produits/category/${category.id}`,
+        href: `/produits/category/${category.id}/${category.nom}`,
         color: `bg-${getCategoryColor(index)}`
       }));
     }

@@ -19,10 +19,19 @@
         </div>
         <!-- <p class="text-text-secondary text-center mb-4">La mode à portée de clic. Qualité et style pour tous.</p> -->
         <div class="flex space-x-4 mt-4">
-          <a href="#" class="text-text-secondary hover:text-text-primary"><i class="fab fa-facebook-f"></i></a>
-          <a href="#" class="text-text-secondary hover:text-text-primary"><i class="fab fa-instagram"></i></a>
-          <a href="#" class="text-text-secondary hover:text-text-primary"><i class="fab fa-twitter"></i></a>
-          <a href="#" class="text-text-secondary hover:text-text-primary"><i class="fab fa-pinterest"></i></a>
+          <!-- Réseaux sociaux dynamiques -->
+          <a v-if="contactInfo.lien_facebook" :href="contactInfo.lien_facebook" target="_blank" class="text-text-secondary hover:text-text-primary transition-colors">
+            <i class="fab fa-facebook-f"></i>
+          </a>
+          <a v-if="contactInfo.lien_insta" :href="contactInfo.lien_insta" target="_blank" class="text-text-secondary hover:text-text-primary transition-colors">
+            <i class="fab fa-instagram"></i>
+          </a>
+          <a v-if="contactInfo.lien_x" :href="contactInfo.lien_x" target="_blank" class="text-text-secondary hover:text-text-primary transition-colors">
+            <i class="fab fa-twitter"></i>
+          </a>
+          <a v-if="contactInfo.lien_tiktok" :href="contactInfo.lien_tiktok" target="_blank" class="text-text-secondary hover:text-text-primary transition-colors">
+            <i class="fab fa-tiktok"></i>
+          </a>
         </div>
       </div>
 
@@ -45,8 +54,8 @@
       <div>
         <h3 class="text-lg font-semibold text-text-primary mb-4">Légal</h3>
         <ul class="space-y-2">
-          <li><a href="#" class="text-text-secondary hover:text-text-primary transition cursor-pointer">Politique de confidentialité</a></li>
-          <li><a href="#" class="text-text-secondary hover:text-text-primary transition cursor-pointer">Termes & Conditions</a></li>
+          <li><a href="/politicy" class="text-text-secondary hover:text-text-primary transition cursor-pointer">Politique de confidentialité</a></li>
+          <li><a href="/terme" class="text-text-secondary hover:text-text-primary transition cursor-pointer">Termes & Conditions</a></li>
         </ul>
       </div>
 
@@ -59,3 +68,40 @@
     </div>
   </footer>
 </template>
+
+<script>
+import { ref, onMounted } from 'vue'
+import { contactService } from '../../config/api.js'
+
+export default {
+  name: 'Footer',
+  setup() {
+    const contactInfo = ref({
+      lien_facebook: '',
+      lien_insta: '',
+      lien_x: '',
+      lien_tiktok: ''
+    })
+
+    const fetchContactInfo = async () => {
+      try {
+        // Récupérer le premier contact (ID 1) qui contient les informations du site
+        const response = await contactService.getContact(1)
+        if (response.data.success) {
+          contactInfo.value = response.data.data
+        }
+      } catch (error) {
+        console.error('Erreur lors de la récupération des informations de contact:', error)
+      }
+    }
+
+    onMounted(() => {
+      fetchContactInfo()
+    })
+
+    return {
+      contactInfo
+    }
+  }
+}
+</script>
