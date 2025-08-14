@@ -35,10 +35,14 @@ export const useCart = () => {
     } else {
       // Nouveau produit ou nouvelle variante, vérifier le stock
       if (quantity <= product.stock) {
+        // Debug: vérifier le prix
+        const finalPrice = product.prix_promotion && product.prix_promotion > 0 ? product.prix_promotion : product.prix;
+       
+        
         cartItems.value.push({
           id: product.id,
           name: product.nom,
-          price: product.prix_promotion || product.prix,
+          price: finalPrice,
           image: product.image_cover,
           quantity: quantity,
           stock: product.stock,

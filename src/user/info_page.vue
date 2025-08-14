@@ -126,12 +126,12 @@
                                 <p class="text-sm font-medium text-gray-600 mb-3">Sélectionnez une option :</p>
                                 <div class="flex flex-col sm:flex-row gap-3">
                                     <label class="flex items-center p-3 border rounded-lg has-[:checked]:bg-green-50 has-[:checked]:border-green-400 transition cursor-pointer flex-1">
-                                        <input type="radio" value="moov" v-model="form.methodePaiementEnLigne" name="methodePaiementEnLigne" class="h-4 w-4 text-green-600 border-gray-300 focus:ring-green-500">
+                                        <input type="radio" value="FLOOZ" v-model="form.methodePaiementEnLigne" name="methodePaiementEnLigne" class="h-4 w-4 text-green-600 border-gray-300 focus:ring-green-500">
                                         <img src="/src/assets/moov.png" alt="Moov Money" class="w-8 h-8 ml-3 mr-2 object-contain">
                                         <span class="text-gray-700">Moov Money</span>
                                     </label>
                                     <label class="flex items-center p-3 border rounded-lg has-[:checked]:bg-yellow-50 has-[:checked]:border-yellow-400 transition cursor-pointer flex-1">
-                                        <input type="radio" value="mixx" v-model="form.methodePaiementEnLigne" name="methodePaiementEnLigne" class="h-4 w-4 text-yellow-600 border-gray-300 focus:ring-yellow-500">
+                                        <input type="radio" value="TMONEY" v-model="form.methodePaiementEnLigne" name="methodePaiementEnLigne" class="h-4 w-4 text-yellow-600 border-gray-300 focus:ring-yellow-500">
                                         <img src="/src/assets/mixx.png" alt="MIXX by YAS" class="w-8 h-8 ml-3 mr-2 object-contain">
                                         <span class="text-gray-700">MIXX by YAS</span>
                                     </label>
@@ -180,12 +180,13 @@
                 
                 <div v-if="isDirectPurchase && directPurchaseProduct" class="mb-4 p-4 bg-blue-50 rounded-lg">
                   <div class="flex items-center space-x-3">
-                    <img :src="getImageUrl(directPurchaseProduct.image)" :alt="directPurchaseProduct.nom" 
+                    <img :src="getImageUrl(directPurchaseProduct.image_cover || directPurchaseProduct.image)" :alt="directPurchaseProduct.nom" 
                          class="w-16 h-16 object-cover rounded-md"
                          @error="handleImageError">
                     <div class="flex-1">
                       <h3 class="font-semibold text-gray-800">{{ directPurchaseProduct.nom }}</h3>
-                      <p class="text-sm text-gray-600">Quantité: {{ directPurchaseProduct.qte }}</p>
+                      <p class="text-sm text-gray-600">Quantité: {{ directPurchaseProduct.quantity || directPurchaseProduct.qte || 1 }}</p>
+                      <p class="text-sm font-bold text-blue-600">{{ formatPrice(getProductPrice(directPurchaseProduct)) }} FCFA</p>
                       <div v-if="directPurchaseProduct.selectedColor || directPurchaseProduct.selectedSize" class="text-xs text-gray-500 mt-1">
                         <span v-if="directPurchaseProduct.selectedColor">{{ directPurchaseProduct.selectedColor }}</span>
                         <span v-if="directPurchaseProduct.selectedColor && directPurchaseProduct.selectedSize"> - </span>
@@ -195,7 +196,7 @@
                   </div>
                 </div>
                 
-                <div v-if="panier.length === 0" class="text-center py-8">
+                <div v-if="!isDirectPurchase && panier.length === 0" class="text-center py-8">
                     <div class="text-gray-500 mb-4">
                         <svg class="w-16 h-16 mx-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m6 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"></path>
@@ -205,15 +206,15 @@
                     <p class="text-sm text-gray-500 mt-1">Ajoutez des produits pour continuer</p>
                 </div>
                 
-                <div v-else class="space-y-4">
+                <div v-if="!isDirectPurchase && panier.length > 0" class="space-y-4">
                     <div v-for="item in panier" :key="item.id" class="flex justify-between items-center text-sm">
                         <div class="flex items-center space-x-3 flex-1">
                             <img v-if="item.image" :src="getImageUrl(item.image)" :alt="item.nom" 
                                  class="w-12 h-12 object-cover rounded-md"
                                  @error="handleImageError">
                             <div class="flex-1">
-                                <p class="font-medium text-gray-800">{{ item.nom }}</p>
-                                <p class="text-gray-500">Qté: {{ item.qte }}</p>
+                                <p class="text-gray-800">{{ item.nom }}</p>
+                                <p class="text-gray-500">Qté: {{ item.qte || item.quantity || 1 }}</p>
                                 <!-- Affichage des variantes si elles existent -->
                                 <div v-if="item.selectedColor || item.selectedSize" class="text-xs text-gray-600 mt-1">
                                     <span v-if="item.selectedColor" class="mr-2">
@@ -226,7 +227,7 @@
                                 </div>
                             </div>
                         </div>
-                        <p class="font-semibold text-gray-800">{{ (item.prix * item.qte).toLocaleString() }} FCFA</p>
+                        <p class="font-semibold text-gray-800">{{ formatPrice(getProductPrice(item) * (item.qte || item.quantity || 1)) }} FCFA</p>
                     </div>
                 </div>
 
@@ -252,7 +253,7 @@
 
                 <div class="mt-8 space-y-3">
                   <button type="submit" 
-                          :disabled="!isFormValid || panier.length === 0 || isLoading" 
+                          :disabled="!isFormValid || isLoading" 
                           class="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-300">
                     <span>{{ isDirectPurchase ? 'Acheter maintenant' : 'Confirmer la commande' }}</span>
                   </button>
@@ -317,7 +318,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import DefaultLayout from '../layouts/DefaultLayout.vue';
 import { useCart } from '../config/cart.js';
-import { getImageUrl, handleImageError } from '../config/utils.js';
+import { getImageUrl, handleImageError, formatPrice } from '../config/utils.js';
 import { useUserNotification } from '../config/userNotification.js';
 import { deliveryService, orderService } from '../config/api.js';
 
@@ -378,7 +379,14 @@ const selectedLivraisonDetails = ref(null);
 // --- Computed Properties ---
 
 const sousTotal = computed(() => {
-    return panier.value.reduce((acc, item) => acc + (item.prix * item.qte), 0);
+    if (isDirectPurchase.value && directPurchaseProduct.value) {
+        // Pour l'achat direct, calculer directement depuis le produit
+        const quantity = directPurchaseProduct.value.quantity || directPurchaseProduct.value.qte || 1;
+        return getProductPrice(directPurchaseProduct.value) * quantity;
+    } else {
+        // Pour le panier normal
+        return panier.value.reduce((acc, item) => acc + (getProductPrice(item) * (item.qte || item.quantity || 1)), 0);
+    }
 });
 
 const fraisLivraison = computed(() => {
@@ -403,14 +411,14 @@ const numeroPaiementError = computed(() => {
 
     const prefix = numero.substring(0, 2);
     
-    if (methode === 'moov') {
+    if (methode === 'FLOOZ') {
         const validPrefixes = ['99', '98', '97', '96'];
         if (!validPrefixes.includes(prefix)) {
             return 'Pour Moov, le numéro doit commencer par 99, 98, 97, ou 96.';
         }
     }
     
-    if (methode === 'mixx') {
+    if (methode === 'TMONEY') {
         const validPrefixes = ['90', '91', '92', '93', '70', '71'];
         if (!validPrefixes.includes(prefix)) {
             return 'Pour MIXX, le numéro doit commencer par 90, 91, 92, 93, 70, ou 71.';
@@ -434,7 +442,12 @@ const isFormValid = computed(() => {
     return !!form.value.methodePaiementEnLigne && numero.length === 8 && !numeroPaiementError.value;
   }
   
-  return true;
+  // Vérifier qu'il y a des produits à commander
+  if (isDirectPurchase.value) {
+    return !!directPurchaseProduct.value;
+  } else {
+    return panier.value.length > 0;
+  }
 });
 
 const updatePanierFromCart = () => {
@@ -459,7 +472,11 @@ const initializePanier = () => {
       if (storedData) {
         isDirectPurchase.value = true;
         directPurchaseProduct.value = JSON.parse(storedData);
-        panier.value = [directPurchaseProduct.value];
+        
+       
+        // Pour l'achat direct, on n'a pas besoin de dupliquer dans le panier
+        // Le produit est affiché directement via directPurchaseProduct
+        panier.value = [];
       } else {
         isDirectPurchase.value = false;
         updatePanierFromCart();
@@ -514,9 +531,28 @@ async function handleConfirmation() {
   isLoading.value = true;
   
   try {
+    // Préparer le panier selon le type d'achat
+    let panierToSend = [];
+    
+    if (isDirectPurchase.value && directPurchaseProduct.value) {
+      // Pour l'achat direct, créer un panier avec le produit
+      panierToSend = [{
+        id: directPurchaseProduct.value.id,
+        nom: directPurchaseProduct.value.nom,
+        qte: directPurchaseProduct.value.quantity || directPurchaseProduct.value.qte || 1,
+        prix: getProductPrice(directPurchaseProduct.value),
+        image: directPurchaseProduct.value.image || directPurchaseProduct.value.image_cover,
+        selectedColor: directPurchaseProduct.value.selectedColor,
+        selectedSize: directPurchaseProduct.value.selectedSize
+      }];
+    } else {
+      // Pour l'achat normal, utiliser le panier existant
+      panierToSend = panier.value;
+    }
+    
     const finalOrder = {
         ...form.value,
-        panier: panier.value,
+        panier: panierToSend,
         sousTotal: sousTotal.value,
         fraisLivraison: fraisLivraison.value,
         prixTotal: prixTotal.value,
@@ -538,6 +574,7 @@ async function handleConfirmation() {
         }
       }
     };
+    
     
     // Envoyer la commande vers l'API avec retry
     const response = await retryOrder(finalOrder);
@@ -624,14 +661,32 @@ const fetchLivraisons = async () => {
   try {
     const response = await deliveryService.getActiveDeliveries();
     if (response.data.success) {
-      livraisons.value = response.data.data.map(livraison => ({
-        id: livraison.id,
-        nom: livraison.nom,
-        zones: livraison.zone.join(', '), // Convertir le tableau en string
-        prix: parseFloat(livraison.prix),
-        details: livraison.description,
-        etat: livraison.etat
-      }));
+      livraisons.value = response.data.data.map(livraison => {
+        // Parser le champ zone qui est retourné comme une chaîne JSON
+        let zones = [];
+        try {
+          if (livraison.zone && livraison.zone !== "[]") {
+            if (typeof livraison.zone === 'string') {
+              zones = JSON.parse(livraison.zone);
+            } else if (Array.isArray(livraison.zone)) {
+              zones = livraison.zone;
+            }
+          }
+        } catch (parseError) {
+          console.warn('Erreur lors du parsing JSON pour la zone:', livraison.id, parseError);
+          zones = [];
+        }
+        
+        return {
+          id: livraison.id,
+          nom: livraison.nom,
+          zones: zones.join(', '), // Maintenant zones est un tableau, on peut faire .join()
+          prix: parseFloat(livraison.prix),
+          details: livraison.description,
+          etat: livraison.etat
+        };
+      });
+      
     } else {
       showError('Erreur lors de la récupération des options de livraison');
     }
@@ -651,15 +706,19 @@ onMounted(() => {
 const addDirectPurchaseToCart = () => {
   if (isDirectPurchase.value && directPurchaseProduct.value) {
     try {
+      // Debug: vérifier les données récupérées
+      console.log('Produit récupéré pour achat direct:', directPurchaseProduct.value);
+      console.log('Prix du produit:', directPurchaseProduct.value.prix, 'Prix promotion:', directPurchaseProduct.value.prix_promotion);
+      
+      // Utiliser la structure correcte attendue par le panier
       const productForCart = {
-        id: directPurchaseProduct.value.id,
-        nom: directPurchaseProduct.value.nom,
-        prix: directPurchaseProduct.value.prix,
-        prix_promotion: directPurchaseProduct.value.prix,
-        image_cover: directPurchaseProduct.value.image,
-        stock: directPurchaseProduct.value.stock || 999,
-        description: directPurchaseProduct.value.description
+        ...directPurchaseProduct.value,
+        // S'assurer que les propriétés essentielles sont présentes
+        image_cover: directPurchaseProduct.value.image || directPurchaseProduct.value.image_cover,
+        // Le panier gère automatiquement le prix avec prix_promotion || prix
       };
+      
+      console.log('Produit préparé pour le panier:', productForCart);
       
       addToCart(productForCart, directPurchaseProduct.value.qte);
       showSuccess(`${directPurchaseProduct.value.nom} ajouté au panier !`);
@@ -676,6 +735,12 @@ const switchToCartMode = () => {
     localStorage.removeItem('directPurchaseData');
     window.location.href = '/info';
   }
+};
+
+// Fonction pour obtenir le prix correct d'un produit (promotion ou prix normal)
+const getProductPrice = (product) => {
+  if (!product) return 0;
+  return (product.prix_promotion && product.prix_promotion > 0) ? product.prix_promotion : product.prix;
 };
 
 // Fonction pour obtenir la classe CSS de couleur

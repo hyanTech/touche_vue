@@ -1,4 +1,14 @@
 <template>
+  <!-- Bandeau de livraison gratuite -->
+  <div class="bg-primary text-white py-2 overflow-hidden">
+          <div class="scrolling-text">
+        <div class="text-container">
+          <span class="text-item">Livraison gratuite pour les commandes de plus de 50.000f</span>
+          <span class="text-item">Livraison des commandes dans un délai de 24h à 48h</span>
+        </div>
+      </div>
+  </div>
+
   <header class="bg-accent shadow-md sticky top-0 z-40">
     <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
       <!-- Main container using justify-between for left and right sections -->
@@ -28,18 +38,37 @@
           <!-- Desktop Navigation Menu (visible from 'md' upwards) -->
           <div class="hidden md:flex md:items-center md:space-x-1">
             <div v-for="link in menuWithCategories" :key="link.name" class="relative group">
-              <a :href="link.href" class="px-4 py-2 text-text-secondary hover:text-[#443627] transition duration-150 flex items-center cursor-pointer">
+              <router-link 
+                :to="link.href" 
+                class="px-4 py-2 text-text-secondary hover:text-[#443627] transition duration-150 flex items-center cursor-pointer"
+                v-if="!link.sublinks || link.sublinks.length === 0"
+              >
                 <i v-if="link.icon" :class="link.icon" class="mr-2"></i>
                 {{ link.name }}
-                <i v-if="link.sublinks && link.sublinks.length > 0" class="fas fa-chevron-down ml-2 text-xs"></i>
                 <span v-if="link.badge" class="ml-2 bg-error-color text-white text-xs px-2 py-1 rounded-full">{{ link.badge }}</span>
-              </a>
+              </router-link>
+              <div 
+                v-else
+                class="px-4 py-2 text-text-secondary hover:text-[#443627] transition duration-150 flex items-center cursor-pointer"
+              >
+                <i v-if="link.icon" :class="link.icon" class="mr-2"></i>
+                {{ link.name }}
+                <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                <span v-if="link.badge" class="ml-2 bg-error-color text-white text-xs px-2 py-1 rounded-full">{{ link.badge }}</span>
+              </div>
               <!-- Sub-menu -->
               <div v-if="link.sublinks && link.sublinks.length > 0" class="absolute top-full right-0 bg-white shadow-lg rounded-md mt-2 w-80 p-4 opacity-0 group-hover:opacity-100 invisible group-hover:visible transition-all duration-300 grid grid-cols-2 gap-4">
                 <div v-for="sublink in link.sublinks" :key="sublink.name" class="flex items-start space-x-3 p-2 rounded-md hover:bg-accent transition-colors">
                   <i v-if="sublink.icon" :class="sublink.icon" class="text-primary mt-1"></i>
-                  <div>
-                    <a :href="sublink.href" class="block text-sm font-medium text-text-secondary hover:text-primary cursor-pointer">{{ sublink.name }}</a>
+                  <div class="flex-1">
+                    <router-link 
+                      :to="sublink.href" 
+                      class="block text-sm font-medium text-text-secondary hover:text-primary cursor-pointer transition-colors duration-200"
+                      @click="closeDropdown"
+                    >
+                      {{ sublink.name }}
+                    </router-link>
+                    <p v-if="sublink.description" class="text-xs text-text-light mt-1 line-clamp-2">{{ sublink.description }}</p>
                   </div>
                 </div>
               </div>
@@ -161,17 +190,17 @@
               <!-- Product Info -->
               <div class="flex-1 min-w-0">
                 <h4 class="font-semibold text-text-primary text-lg mb-1">{{ product.nom }}</h4>
-                <p class="text-text-light text-sm mb-2 line-clamp-2">{{ product.description }}</p>
+                
                 
                 <!-- Price -->
                 <div class="flex items-center space-x-2">
-                  <span v-if="product.prix_promotion" class="text-lg font-bold text-primary">
+                  <span v-if="product.prix_promotion && product.prix_promotion > 0" class="text-lg font-bold text-primary">
                     {{ formatPrice(product.prix_promotion) }} FCFA
                   </span>
                   <span v-else class="text-lg font-bold text-primary">
                     {{ formatPrice(product.prix) }} FCFA
                   </span>
-                  <span v-if="product.prix_promotion" class="text-sm text-text-light line-through">
+                  <span v-if="product.prix_promotion && product.prix_promotion > 0" class="text-sm text-text-light line-through">
                     {{ formatPrice(product.prix) }} FCFA
                   </span>
                 </div>
@@ -186,9 +215,13 @@
                     <i class="fas fa-times-circle mr-1"></i>
                     Rupture de stock
                   </span>
-                  <span v-if="product.tailles && product.tailles.length > 0">
+                  <span v-if="product.hasTailles">
                     <i class="fas fa-ruler mr-1"></i>
                     {{ product.tailles.join(', ') }}
+                  </span>
+                  <span v-if="product.hasCouleurs">
+                    <i class="fas fa-palette mr-1"></i>
+                    {{ product.couleurs.join(', ') }}
                   </span>
                 </div>
               </div>
@@ -230,6 +263,51 @@ import { mainMenu, fetchActiveCategories } from '../../config/menu.js';
 import { productService, API_BASE_URL } from '../../config/api.js';
 import { useRouter } from 'vue-router';
 import { getImageUrl, handleImageError, formatPrice } from '../../config/utils.js';
+
+// Fonction utilitaire pour parser les données JSON des produits
+const parseProductData = (product) => {
+  try {
+    // Parser les tailles si c'est une chaîne JSON
+    if (typeof product.tailles === 'string') {
+      product.tailles = JSON.parse(product.tailles);
+    }
+    
+    // Parser les couleurs si c'est une chaîne JSON
+    if (typeof product.couleurs === 'string') {
+      product.couleurs = JSON.parse(product.couleurs);
+    }
+    
+    // Parser les images si c'est une chaîne JSON
+    if (typeof product.images === 'string') {
+      product.images = JSON.parse(product.images);
+    }
+    
+    return product;
+  } catch (error) {
+    console.warn('Erreur lors du parsing des données du produit:', error);
+    // En cas d'erreur, retourner des valeurs par défaut
+    return {
+      ...product,
+      tailles: Array.isArray(product.tailles) ? product.tailles : [],
+      couleurs: Array.isArray(product.couleurs) ? product.couleurs : [],
+      images: Array.isArray(product.images) ? product.images : []
+    };
+  }
+};
+
+// Fonction utilitaire pour formater l'affichage des données des produits
+const formatProductDisplay = (product) => {
+  const parsedProduct = parseProductData(product);
+  
+  return {
+    ...parsedProduct,
+    tailles: Array.isArray(parsedProduct.tailles) ? parsedProduct.tailles : [],
+    couleurs: Array.isArray(parsedProduct.couleurs) ? parsedProduct.couleurs : [],
+    images: Array.isArray(parsedProduct.images) ? parsedProduct.images : [],
+    hasTailles: Array.isArray(parsedProduct.tailles) && parsedProduct.tailles.length > 0,
+    hasCouleurs: Array.isArray(parsedProduct.couleurs) && parsedProduct.couleurs.length > 0
+  };
+};
 
 const props = defineProps({
   cartItems: {
@@ -294,7 +372,8 @@ const performRealTimeSearch = async (query) => {
 
     if (response && response.data) {
       if (response.data.success && response.data.data && response.data.data.length > 0) {
-        searchResults.value = response.data.data;
+        // Parser et formater les données JSON de chaque produit
+        searchResults.value = response.data.data.map(product => formatProductDisplay(product));
         searchError.value = '';
       } else {
         searchResults.value = [];
@@ -348,6 +427,37 @@ const styles = `
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+  
+  /* Styles pour le bandeau défilant séquentiel */
+  .scrolling-text {
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  
+  .text-container {
+    display: inline-block;
+    animation: scroll-sequential 15s linear infinite;
+  }
+  
+  .text-item {
+    display: inline-block;
+    white-space: nowrap;
+    margin-right: 200px;
+  }
+  
+  @keyframes scroll-sequential {
+    0% {
+      transform: translateX(100%);
+    }
+    100% {
+      transform: translateX(-90%);
+    }
+  }
+  
+  /* Pause l'animation au survol */
+  .scrolling-text:hover .text-container {
+    animation-play-state: paused;
+  }
 `;
 
 if (typeof document !== 'undefined') {
@@ -370,10 +480,20 @@ const updateMenuWithCategories = (categories) => {
   });
 };
 
+// Fonction pour fermer le menu déroulant après navigation
+const closeDropdown = () => {
+  // Cette fonction peut être utilisée pour fermer le menu si nécessaire
+  // Pour l'instant, le menu se ferme automatiquement grâce au CSS hover
+};
+
 onMounted(async () => {
   try {
     const categories = await fetchActiveCategories();
-    updateMenuWithCategories(categories);
+    if (categories && categories.length > 0) {
+      updateMenuWithCategories(categories);
+    } else {
+      console.warn('Aucune catégorie trouvée ou erreur lors du chargement');
+    }
   } catch (error) {
     console.error('Error loading categories:', error);
   }

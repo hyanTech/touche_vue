@@ -7,13 +7,13 @@
     <div v-if="isPageLoading" class="fixed inset-0 z-[9999] bg-white flex items-center justify-center">
       <div class="text-center">
         <img src="/src/assets/logo.png" alt="Logo" class="h-28 w-auto mx-auto mb-4 animate-pulse">
-        <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-[#F8B259] mx-auto mb-4"></div>
+        <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-[#393E46] mx-auto mb-4"></div>
         <p class="text-gray-600 font-medium">Chargement...</p>
       </div>
     </div>
 
     <!-- Page Transition Overlay -->
-    <div v-if="isPageTransitioning" class="fixed inset-0 z-[9998] bg-[#F8B259] flex items-center justify-center">
+    <div v-if="isPageTransitioning" class="fixed inset-0 z-[9998] bg-[#393E46] flex items-center justify-center">
       <div class="text-center text-white">
         <div class="animate-pulse">
           <img src="/src/assets/logo.png" alt="Logo" class="h-20 w-auto mx-auto mb-4">
@@ -37,14 +37,14 @@
       <nav>
         <ul>
           <li v-for="(link, index) in dynamicMobileMenu" :key="link.name" class="border-b border-gray-200">
-            <div v-if="!link.sublinks" class="block text-gray-700 hover:bg-[#F8B259] hover:text-[#F8B259] rounded-md p-3 transition-colors">
+            <div v-if="!link.sublinks" class="block text-gray-700 hover:bg-[#3C3D37] hover:text-[#FAF9EE] rounded-md p-3 transition-colors">
               <a :href="link.href" class="cursor-pointer flex items-center">
                 <i v-if="link.icon" :class="link.icon" class="mr-3"></i>
                 {{ link.name }}
               </a>
             </div>
             <div v-else>
-              <button @click="toggleAccordion(index)" class="w-full flex justify-between items-center text-gray-700 hover:bg-pink-50 hover:text-pink-600 rounded-md p-3 transition-colors cursor-pointer">
+              <button @click="toggleAccordion(index)" class="w-full flex justify-between items-center text-gray-700 hover:bg-pink-50 hover:text-[#393E46] rounded-md p-3 transition-colors cursor-pointer">
                 <span class="flex items-center">
                   <i v-if="link.icon" :class="link.icon" class="mr-3"></i>
                   {{ link.name }}

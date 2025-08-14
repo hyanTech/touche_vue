@@ -188,18 +188,37 @@ import { getImageUrl, handleImageError } from '../config/utils.js';
           const response = await productService.getAllActiveProducts();
           
                      if (response.data && response.data.success && Array.isArray(response.data.data)) {
-               products.value = response.data.data.map(product => ({
-                   id: product.id,
-                   name: product.nom,
-                   description: product.description || 'Aucune description disponible',
-                   price: parseFloat(product.prix_promotion || product.prix),
-                   originalPrice: product.prix_promotion && product.prix !== product.prix_promotion ? parseFloat(product.prix) : null,
-                   imageUrl: product.image_cover, // Stocker l'URL brute, pas traitée
-                   stock: product.stock,
-                   category: product.categorie,
-                   tailles: product.tailles || [],
-                   couleurs: product.couleurs || []
-               }));
+               products.value = response.data.data.map(product => {
+                   // Parser les champs JSON
+                   let couleurs = [];
+                   let tailles = [];
+                   
+                   try {
+                       if (product.couleurs && product.couleurs !== "[]") {
+                           couleurs = JSON.parse(product.couleurs);
+                       }
+                       if (product.tailles && product.tailles !== "[]") {
+                           tailles = JSON.parse(product.tailles);
+                       }
+                   } catch (parseError) {
+                       console.warn('Erreur lors du parsing JSON pour le produit:', product.id, parseError);
+                       couleurs = [];
+                       tailles = [];
+                   }
+                   
+                   return {
+                       id: product.id,
+                       name: product.nom,
+                       description: product.description || 'Aucune description disponible',
+                       price: product.prix_promotion && product.prix_promotion > 0 ? parseFloat(product.prix_promotion) : parseFloat(product.prix),
+                       originalPrice: product.prix_promotion && product.prix_promotion > 0 && product.prix !== product.prix_promotion ? parseFloat(product.prix) : null,
+                       imageUrl: product.image_cover, // Stocker l'URL brute, pas traitée
+                       stock: product.stock,
+                       category: product.categorie,
+                       tailles: tailles,
+                       couleurs: couleurs
+                   };
+               });
           } else {
               throw new Error('Format de réponse invalide');
           }
@@ -220,9 +239,9 @@ import { getImageUrl, handleImageError } from '../config/utils.js';
            return;
        }
        
-       // Vérifier si le produit a des tailles ou couleurs
-       const hasOptions = (product.tailles && product.tailles.length > 0) || 
-                         (product.couleurs && product.couleurs.length > 0);
+       // Vérifier si le produit a des tailles ou couleurs (maintenant parsés en tableaux)
+       const hasOptions = (product.tailles && Array.isArray(product.tailles) && product.tailles.length > 0) || 
+                         (product.couleurs && Array.isArray(product.couleurs) && product.couleurs.length > 0);
        
        if (hasOptions) {
            // Ouvrir le modal de sélection
@@ -255,7 +274,7 @@ import { getImageUrl, handleImageError } from '../config/utils.js';
                id: product.id,
                nom: product.name, // Utiliser 'nom' pour correspondre au panier
                prix: product.price,
-               prix_promotion: product.price,
+               prix_promotion: product.originalPrice ? product.price : null, // Seulement si il y a un prix original barré
                image_cover: product.imageUrl, // URL brute pour le panier
                stock: product.stock || 999,
                description: product.description

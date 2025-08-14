@@ -135,7 +135,7 @@
                   </div>
                   <div class="ml-4">
                     <div class="text-sm font-medium text-gray-900">{{ product.nom }}</div>
-                    <div class="text-sm text-gray-500">{{ product.description }}</div>
+                    
                   </div>
                 </div>
               </td>
@@ -147,9 +147,18 @@
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="text-sm text-gray-900">
-                  {{ formatPriceWithDecimals(product.prix) }} €
-                  <span v-if="product.prix_promotion" class="text-red-600 ml-2 line-through">
-                    {{ formatPriceWithDecimals(product.prix_promotion) }} €
+                  <!-- Si prix_promotion existe et est différent de 0, l'afficher comme prix principal -->
+                  <span v-if="product.prix_promotion && product.prix_promotion > 0" class="text-red-600 font-semibold">
+                    {{ formatPriceWithDecimals(product.prix_promotion) }} FCFA
+                  </span>
+                  <!-- Sinon afficher le prix normal -->
+                  <span v-else>
+                    {{ formatPriceWithDecimals(product.prix) }} FCFA
+                  </span>
+                  
+                  <!-- Barrer le prix original si promotion active -->
+                  <span v-if="product.prix_promotion && product.prix_promotion > 0" class="text-gray-500 ml-2 line-through">
+                    {{ formatPriceWithDecimals(product.prix) }} FCFA
                   </span>
                 </div>
               </td>

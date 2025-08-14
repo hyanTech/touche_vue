@@ -138,9 +138,18 @@
             </div>
             
             <div class="absolute inset-0 flex items-center justify-center">
+              <!-- Bouton mobile avec icône -->
               <button @click.stop="handleAddToCart(product)"
                 :disabled="product.stock === 0"
-                class="text-white bg-primary py-2 px-4 text-sm sm:px-6 rounded-full opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transform scale-90 group-hover:scale-100 transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-lg bg-black/70 backdrop-blur-sm">
+                class="sm:hidden absolute top-3 left-3 text-white bg-primary hover:bg-hover-color p-3 rounded-full opacity-100 transform scale-90 hover:scale-100 transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-lg bg-black/70 backdrop-blur-sm">
+                <i v-if="product.stock === 0" class="fas fa-times text-base"></i>
+                <i v-else class="fas fa-shopping-cart text-base"></i>
+              </button>
+              
+              <!-- Bouton desktop avec texte -->
+              <button @click.stop="handleAddToCart(product)"
+                :disabled="product.stock === 0"
+                class="hidden sm:block text-white bg-primary py-2 px-4 text-sm sm:px-6 rounded-full opacity-0 group-hover:opacity-100 transform scale-90 group-hover:scale-100 transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-lg bg-black/70 backdrop-blur-sm">
                 {{ product.stock === 0 ? 'Rupture' : 'Ajouter au panier' }}
               </button>
             </div>
@@ -161,11 +170,9 @@
             <div class="mt-auto pt-2 flex flex-col sm:flex-row sm:justify-between sm:items-center">
               <div class="flex items-baseline space-x-2">
                 <!-- Prix barré si promotion -->
-                <p v-if="product.prix_promotion && product.prix_promotion !== product.prix" class="text-text-light line-through text-md">{{ formatPrice(product.prix)
-                  }} FCFA</p>
-                <!-- Prix principal (promotion ou prix normal) -->
-                <p class="text-primary font-bold text-lg">
-                  {{ formatPrice(product.prix_promotion || product.prix) }} FCFA
+                <p v-if="product.prix_promotion && product.prix_promotion > 0 && product.prix_promotion !== product.prix" class="text-text-light line-through text-md">{{ formatPrice(product.prix) }} FCFA</p>
+                <p class="text-xl font-bold text-primary">
+                  {{ formatPrice(product.prix_promotion && product.prix_promotion > 0 ? product.prix_promotion : product.prix) }} FCFA
                 </p>
               </div>
               <button
@@ -179,8 +186,17 @@
         </div>
       </div>
 
+      <!-- Bouton "Tout voir" qui apparaît si 10 produits ou plus -->
+      <div v-if="activeProducts.length >= 10" class="text-center mt-8">
+        <a href="/produits" 
+           class="inline-flex items-center px-6 py-3 bg-primary text-white font-semibold rounded-full hover:bg-hover-color transition-all duration-300 transform hover:scale-105 cursor-pointer">
+          <span>Tout voir</span>
+          <i class="fas fa-arrow-right ml-2"></i>
+        </a>
+      </div>
+
       <!-- Empty State -->
-      <div v-else class="text-center py-12">
+      <div v-else-if="activeProducts.length === 0" class="text-center py-12">
         <div class="bg-bg-secondary rounded-lg p-8 max-w-md mx-auto">
           <i class="fas fa-box-open text-text-light text-4xl mb-4"></i>
           <h3 class="text-lg font-medium text-text-primary mb-2">Aucun produit disponible</h3>
@@ -286,9 +302,9 @@ const showProductDetails = (product) => {
 };
 
 const handleAddToCart = (product) => {
-  // Vérifier si le produit a des tailles ou couleurs
-  const hasOptions = (product.tailles && product.tailles.length > 0) || 
-                    (product.couleurs && product.couleurs.length > 0);
+  // Vérifier si le produit a des tailles ou couleurs (maintenant parsés en tableaux)
+  const hasOptions = (product.tailles && Array.isArray(product.tailles) && product.tailles.length > 0) || 
+                    (product.couleurs && Array.isArray(product.couleurs) && product.couleurs.length > 0);
   
   if (hasOptions) {
     // Ouvrir le modal de sélection
@@ -329,11 +345,32 @@ const loadProducts = async () => {
 
   try {
     const response = await productService.getActiveProducts();
-    // Ajouter la propriété imageLoaded à chaque produit
-    activeProducts.value = (response.data.data || []).map(product => ({
-      ...product,
-      imageLoaded: false
-    }));
+    
+    // Parser les champs JSON pour chaque produit
+    activeProducts.value = (response.data.data || []).map(product => {
+      let couleurs = [];
+      let tailles = [];
+      
+      try {
+        if (product.couleurs && product.couleurs !== "[]") {
+          couleurs = JSON.parse(product.couleurs);
+        }
+        if (product.tailles && product.tailles !== "[]") {
+          tailles = JSON.parse(product.tailles);
+        }
+      } catch (parseError) {
+        console.warn('Erreur lors du parsing JSON pour le produit:', product.id, parseError);
+        couleurs = [];
+        tailles = [];
+      }
+      
+      return {
+        ...product,
+        couleurs: couleurs,
+        tailles: tailles,
+        imageLoaded: false
+      };
+    });
   } catch (error) {
     console.error('Erreur lors du chargement des produits:', error);
     productsError.value = 'Erreur lors du chargement des produits. Veuillez réessayer.';

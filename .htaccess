@@ -1,0 +1,15 @@
+<IfModule mod_rewrite.c>
+  Options -MultiViews
+
+  RewriteEngine On
+  RewriteBase /
+
+  # Si fichier ou dossier existe → on sert normalement
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Sinon → redirection vers index.html
+  RewriteRule ^ index.html [L]
+
+</IfModule>

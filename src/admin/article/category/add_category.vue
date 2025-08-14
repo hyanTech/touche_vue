@@ -263,7 +263,9 @@ export default {
             'fas fa-gem',
             'fas fa-coffee',
             'fas fa-pizza-slice',
-            'fas fa-camera'
+            'fas fa-camera',
+            "fa-solid fa-person-dress",
+            "fa-solid fa-gift",
         ]
 
         // Methods

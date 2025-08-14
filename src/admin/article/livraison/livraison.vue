@@ -162,7 +162,32 @@ export default {
             
             try {
                 const response = await deliveryService.getDeliveries()
-                shippingTypes.value = response.data.data || []
+                console.log(response.data.data)
+                
+                // Parser les champs JSON pour chaque méthode de livraison
+                shippingTypes.value = (response.data.data || []).map(delivery => {
+                    let zones = []
+                    
+                    try {
+                        if (delivery.zone && delivery.zone !== "[]") {
+                            if (typeof delivery.zone === 'string') {
+                                zones = JSON.parse(delivery.zone)
+                            } else if (Array.isArray(delivery.zone)) {
+                                zones = delivery.zone
+                            }
+                        }
+                    } catch (parseError) {
+                        console.warn('Erreur lors du parsing JSON pour la zone:', delivery.id, parseError)
+                        zones = []
+                    }
+                    
+                    return {
+                        ...delivery,
+                        zone: zones
+                    }
+                })
+                
+                console.log('Méthodes de livraison parsées:', shippingTypes.value)
             } catch (err) {
                 console.error('Erreur lors du chargement des méthodes de livraison:', err)
                 error.value = 'Erreur lors du chargement des méthodes de livraison'

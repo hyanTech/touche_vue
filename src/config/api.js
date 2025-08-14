@@ -301,6 +301,15 @@ export const paymentService = {
         return apiClient.get('/payments', { params })
     },
 
+    initiatePayGatePayment: (paymentData) => {
+        return apiClient.post('/payments/paygate/initiate', paymentData)
+    },
+
+    // Vérifier le statut d'un paiement PayGate
+    checkPayGateStatus: (txReference) => {
+        return apiClient.post(`/payments/paygate/check-status/${txReference}`)
+    },
+
     // Récupérer un paiement par ID
     getPayment: (id) => {
         return apiClient.get(`/payments/${id}`)
@@ -319,6 +328,16 @@ export const paymentService = {
     // Supprimer un paiement
     deletePayment: (id) => {
         return apiClient.delete(`/payments/${id}`)
+    },
+
+    // Annuler une commande
+    cancelOrder: (orderId) => {
+        return apiClient.put(`/orders/${orderId}/cancel`)
+    },
+
+    // Annuler un paiement
+    cancelPayment: (orderId) => {
+        return apiClient.put(`/payments/${orderId}/cancel`)
     }
 }
 
@@ -453,6 +472,11 @@ export const contactService = {
   // Supprimer un contact
   deleteContact: (id) => {
     return apiClient.delete(`/contacts/${id}`)
+  },
+
+  // Envoyer un message de contact
+  sendMessage: (messageData) => {
+    return apiClient.post('/contacts/send-message', messageData)
   }
 }
 
@@ -463,9 +487,9 @@ export const informationService = {
     return apiClient.get('/informations')
   },
 
-  // Récupérer une information par ID
-  getInformation: (id) => {
-    return apiClient.get(`/informations/${id}`)
+  // Récupérer les informations du site
+  getInformation: () => {
+    return apiClient.get('/informations')
   },
 
   // Créer une nouvelle information

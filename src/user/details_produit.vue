@@ -40,7 +40,7 @@
                 >
               </transition>
             </div>
-            <div class="grid grid-cols-4 gap-4">
+            <div v-if="product.images && product.images.length > 1" class="grid grid-cols-4 gap-4">
                              <!-- Image principale (cover) -->
                <div
                  @click="product.activeImage = product.image_cover"
@@ -85,8 +85,10 @@
                 </button>
               </div>
               <div class="flex items-baseline gap-3 mt-2">
-                <p class="text-2xl font-semibold text-primary">{{ formatPrice(product.prix_promotion || product.prix) }} FCFA</p>
-                <p v-if="product.prix_promotion" class="text-xl font-medium text-text-light line-through">{{ formatPrice(product.prix) }} FCFA</p>
+                <p class="text-2xl font-semibold text-primary">
+                  {{ formatPrice(product.prix_promotion && product.prix_promotion > 0 ? product.prix_promotion : product.prix) }} FCFA
+                </p>
+                <p v-if="product.prix_promotion && product.prix_promotion > 0" class="text-xl font-medium text-text-light line-through">{{ formatPrice(product.prix) }} FCFA</p>
               </div>
               <!-- Statut du stock -->
               <div class="mt-2">
@@ -107,7 +109,7 @@
               </div>
             </div>
             
-            <p class="text-text-secondary leading-relaxed">{{ product.description }}</p>
+            <!-- <p class="text-text-secondary leading-relaxed">{{ product.description }}</p> -->
             
             <!-- Sélections -->
             <div v-if="product.couleurs && product.couleurs.length > 0">
@@ -150,12 +152,12 @@
 
 
             <!-- Section de personnalisation du panier -->
-            <div v-if="product.stock > 0" class="mt-6 p-4 bg-accent rounded-lg border border-accent">
+            <div v-if="product.stock > 0 && (product.couleurs?.length > 0 || product.tailles?.length > 0)" class="mt-6 p-4 bg-accent rounded-lg border border-accent">
               <div class="flex items-center gap-2 mb-3">
                 <i class="fas fa-magic text-primary"></i>
-                <h3 class="text-lg font-semibold text-white">Personnaliser votre panier</h3>
+                <h3 class="text-lg font-semibold text-[#2C2C2C]">Personnaliser votre panier</h3>
               </div>
-              <p class="text-sm text-white mb-4">
+              <p class="text-sm text-[#2C2C2C] mb-4">
                 Ajoutez ce produit au panier avec vos préférences de couleur et taille !
               </p>
               
@@ -199,6 +201,32 @@
 
             </div>
             
+            <!-- Section d'ajout au panier simple (quand pas de variantes) -->
+            <div v-else-if="product.stock > 0" class="mt-6 p-4 bg-accent rounded-lg border border-accent">
+              <div class="flex items-center gap-2 mb-3">
+                <i class="fas fa-shopping-cart text-primary"></i>
+                <h3 class="text-lg font-semibold text-[#2C2C2C]">Ajouter au panier</h3>
+              </div>
+              <p class="text-sm text-[#2C2C2C] mb-4">
+                Ce produit est disponible en stock. Ajoutez-le directement à votre panier !
+              </p>
+              
+              <!-- Formulaire d'ajout simple -->
+              <div class="bg-white rounded-lg p-4 border border-accent">
+                <h4 class="text-sm font-medium text-text-primary mb-3">Quantité</h4>
+                <div class="flex items-center justify-center gap-4">
+                  <div class="flex items-center border border-accent rounded-md">
+                    <button @click="decrementNewVariantQuantity" :disabled="newVariant.quantity <= 1" class="px-3 py-2 text-text-secondary hover:bg-primary hover:text-white disabled:opacity-50">-</button>
+                    <span class="px-4 py-2 text-sm font-medium">{{ newVariant.quantity }}</span>
+                    <button @click="incrementNewVariantQuantity" :disabled="newVariant.quantity >= product.stock" class="px-3 py-2 text-text-secondary hover:bg-primary hover:text-white disabled:opacity-50">+</button>
+                  </div>
+                  <button @click="addSimpleToCart" class="bg-primary text-white text-sm font-medium py-2 px-6 rounded-md hover:bg-hover-color transition-colors">
+                    <i class="fas fa-plus mr-1"></i>Ajouter au panier
+                  </button>
+                </div>
+              </div>
+            </div>
+            
             <!-- Message de rupture de stock -->
             <div v-else class="mt-6 p-4 bg-red-50 rounded-lg border border-red-200">
               <div class="flex items-center gap-2 mb-3">
@@ -219,7 +247,7 @@
       </div>
 
       <!-- Préchargement caché des images -->
-      <div v-if="product && product.images" class="hidden">
+      <div v-if="product && product.images && product.images.length > 0" class="hidden">
         <img v-for="image in product.images" :key="'preload-' + image.filename" :src="getImageUrl(image.filename)" />
       </div>
 
@@ -241,7 +269,9 @@
                     </a>
                   </h3>
                 </div>
-                <p class="text-sm font-medium text-text-primary">{{ formatPrice(otherProduct.prix_promotion || otherProduct.prix) }} FCFA</p>
+                <p class="text-sm font-medium text-text-primary">
+                  {{ formatPrice(otherProduct.prix_promotion && otherProduct.prix_promotion > 0 ? otherProduct.prix_promotion : otherProduct.prix) }} FCFA
+                </p>
               </div>
             </div>
           </div>
@@ -290,9 +320,9 @@ const canAddCustomVariant = computed(() => {
   if (product.value.stock <= 0) return false;
   
   // Si le produit a des couleurs, il faut en sélectionner une
-  const hasColor = product.value.couleurs && product.value.couleurs.length > 0 ? newVariant.color : true;
+  const hasColor = product.value.couleurs && Array.isArray(product.value.couleurs) && product.value.couleurs.length > 0 ? newVariant.color : true;
   // Si le produit a des tailles, il faut en sélectionner une
-  const hasSize = product.value.tailles && product.value.tailles.length > 0 ? newVariant.size : true;
+  const hasSize = product.value.tailles && Array.isArray(product.value.tailles) && product.value.tailles.length > 0 ? newVariant.size : true;
   
   return hasColor && hasSize && newVariant.quantity > 0 && newVariant.quantity <= product.value.stock;
 });
@@ -304,9 +334,9 @@ const canProceedToPurchase = computed(() => {
   if (product.value.stock <= 0) return false;
   
   // Vérifier si les sélections requises sont faites
-  const hasColor = product.value.couleurs && product.value.couleurs.length > 0 ? 
+  const hasColor = product.value.couleurs && Array.isArray(product.value.couleurs) && product.value.couleurs.length > 0 ? 
     (newVariant.color || product.value.selectedColor) : true;
-  const hasSize = product.value.tailles && product.value.tailles.length > 0 ? 
+  const hasSize = product.value.tailles && Array.isArray(product.value.tailles) && product.value.tailles.length > 0 ? 
     (newVariant.size || product.value.selectedSize) : true;
   
   return hasColor && hasSize;
@@ -328,12 +358,38 @@ const loadProduct = async () => {
     if (response.data && response.data.success && response.data.data) {
       const productData = response.data.data;
       
+      // Parser les champs JSON
+      let couleurs = [];
+      let tailles = [];
+      let images = [];
+      
+      try {
+        if (productData.couleurs && productData.couleurs !== "[]") {
+          couleurs = JSON.parse(productData.couleurs);
+        }
+        if (productData.tailles && productData.tailles !== "[]") {
+          tailles = JSON.parse(productData.tailles);
+        }
+        if (productData.images && productData.images !== "[]") {
+          images = JSON.parse(productData.images);
+        }
+      } catch (parseError) {
+        console.warn('Erreur lors du parsing JSON:', parseError);
+        // En cas d'erreur de parsing, on utilise des tableaux vides
+        couleurs = [];
+        tailles = [];
+        images = [];
+      }
+      
       // Préparer les données du produit
       product.value = {
         ...productData,
+        couleurs: couleurs,
+        tailles: tailles,
+        images: images,
         activeImage: productData.image_cover,
-        selectedColor: productData.couleurs && productData.couleurs.length > 0 ? productData.couleurs[0] : null,
-        selectedSize: productData.tailles && productData.tailles.length > 0 ? productData.tailles[0] : null
+        selectedColor: couleurs.length > 0 ? couleurs[0] : null,
+        selectedSize: tailles.length > 0 ? tailles[0] : null
       };
 
       // Charger les produits similaires (même catégorie)
@@ -423,8 +479,8 @@ const addCustomVariant = () => {
     // Créer le produit avec les variantes sélectionnées
     const productWithVariant = {
       ...product.value,
-      selectedColor: newVariant.color || product.value.couleurs?.[0] || null,
-      selectedSize: newVariant.size || product.value.tailles?.[0] || null
+      selectedColor: (product.value.couleurs && product.value.couleurs.length > 0) ? newVariant.color : null,
+      selectedSize: (product.value.tailles && product.value.tailles.length > 0) ? newVariant.size : null
     };
     
     // Ajouter au panier
@@ -441,6 +497,28 @@ const addCustomVariant = () => {
   }
 };
 
+const addSimpleToCart = () => {
+  if (!product.value) return;
+  
+  if (product.value.stock <= 0) {
+    showError('Ce produit n\'est plus disponible en stock');
+    return;
+  }
+
+  try {
+    // Utiliser la même structure que le panier attend
+    const productData = {
+      ...product.value,
+      selectedColor: null, // Pas de couleur sélectionnée pour un produit simple
+      selectedSize: null // Pas de taille sélectionnée pour un produit simple
+    };
+
+    addToCart(productData, newVariant.quantity);
+    showSuccess(`${productData.nom} ajouté au panier !`);
+  } catch (error) {
+    showError(error.message);
+  }
+};
 
 
 const handleAddToCart = () => {
@@ -462,23 +540,18 @@ const goToInfoPage = () => {
   }
   
   // Utiliser les valeurs de la section de personnalisation si elles sont définies
-  const selectedColor = newVariant.color || product.value.selectedColor;
-  const selectedSize = newVariant.size || product.value.selectedSize;
+  const selectedColor = (product.value.couleurs && product.value.couleurs.length > 0) ? (newVariant.color || product.value.selectedColor) : null;
+  const selectedSize = (product.value.tailles && product.value.tailles.length > 0) ? (newVariant.size || product.value.selectedSize) : null;
   // Utiliser toujours la quantité du sélecteur principal pour le bouton "Acheter"
   const selectedQuantity = quantity.value;
   
   // Préparer les données du produit pour l'achat direct
   const productData = {
-    id: product.value.id,
-    nom: product.value.nom,
-    prix: product.value.prix_promotion || product.value.prix,
-    image: product.value.image_cover,
-    qte: selectedQuantity,
-    stock: product.value.stock,
-    description: product.value.description,
+    ...product.value,
     selectedColor: selectedColor,
     selectedSize: selectedSize
   };
+  
   
   // Stocker temporairement les données dans localStorage
   localStorage.setItem('directPurchaseData', JSON.stringify(productData));

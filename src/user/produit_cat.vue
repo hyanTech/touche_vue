@@ -55,7 +55,7 @@
                                     <span class="text-base sm:text-lg font-bold text-primary">
                                         {{ formatPrice(product.prix_promotion || product.prix) }} FCFA
                                     </span>
-                                    <span v-if="product.prix_promotion" class="ml-2 text-xs sm:text-sm text-text-light line-through">
+                                    <span v-if="product.prix_promotion && product.prix_promotion > 0 && product.prix_promotion !== product.prix" class="ml-2 text-xs sm:text-sm text-text-light line-through">
                                         {{ formatPrice(product.prix) }} FCFA
                                     </span>
                                 </div>
@@ -140,17 +140,36 @@ const loadProducts = async () => {
         
         if (response.data && response.data.success && response.data.data) {
             // Mapper les données des produits pour inclure les options
-            products.value = response.data.data.map(product => ({
-                id: product.id,
-                nom: product.nom,
-                prix: parseFloat(product.prix_promotion || product.prix),
-                originalPrice: product.prix_promotion && product.prix !== product.prix_promotion ? parseFloat(product.prix) : null,
-                image_cover: product.image_cover,
-                stock: product.stock,
-                category: product.category,
-                tailles: product.tailles || [],
-                couleurs: product.couleurs || []
-            }));
+            products.value = response.data.data.map(product => {
+                // Parser les champs JSON
+                let couleurs = [];
+                let tailles = [];
+                
+                try {
+                    if (product.couleurs && product.couleurs !== "[]") {
+                        couleurs = JSON.parse(product.couleurs);
+                    }
+                    if (product.tailles && product.tailles !== "[]") {
+                        tailles = JSON.parse(product.tailles);
+                    }
+                } catch (parseError) {
+                    console.warn('Erreur lors du parsing JSON pour le produit:', product.id, parseError);
+                    couleurs = [];
+                    tailles = [];
+                }
+                
+                return {
+                    id: product.id,
+                    nom: product.nom,
+                    prix: parseFloat(product.prix),
+                    prix_promotion: product.prix_promotion && parseFloat(product.prix_promotion) > 0 ? parseFloat(product.prix_promotion) : null,
+                    image_cover: product.image_cover,
+                    stock: product.stock,
+                    category: product.category,
+                    tailles: tailles,
+                    couleurs: couleurs
+                };
+            });
             
             // Récupérer les informations de la catégorie depuis le premier produit
             if (products.value.length > 0 && products.value[0].category) {
@@ -172,9 +191,9 @@ const showProductDetails = (product) => {
 };
 
 const handleAddToCart = (product) => {
-    // Vérifier si le produit a des options (tailles ou couleurs)
-    const hasOptions = (product.tailles && product.tailles.length > 0) || 
-                      (product.couleurs && product.couleurs.length > 0);
+    // Vérifier si le produit a des options (tailles ou couleurs) - maintenant parsés en tableaux
+    const hasOptions = (product.tailles && Array.isArray(product.tailles) && product.tailles.length > 0) || 
+                      (product.couleurs && Array.isArray(product.couleurs) && product.couleurs.length > 0);
     
     if (hasOptions) {
         // Ouvrir le modal pour sélectionner les options

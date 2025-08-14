@@ -70,9 +70,9 @@
                 <span>{{ isLoading ? 'Traitement...' : 'Confirmer et Payer' }}</span>
               </button>
               
-              <button @click="goBack" 
+              <button @click="cancelOrder" 
                       class="flex-1 bg-gray-200 text-gray-700 font-medium py-3 px-6 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-all duration-300">
-                Retour
+                Annuler la commande
               </button>
             </div>
           </div>
@@ -161,8 +161,8 @@
                 </svg>
             </div>
         </div>
-        <h3 class="text-xl font-bold text-gray-800 mt-6">En attente de confirmation</h3>
-        <p class="text-gray-600 mt-2">Veuillez vérifier la notification sur votre téléphone pour approuver la transaction.</p>
+        <h3 class="text-xl font-bold text-gray-800 mt-6">En attente de confirmation du paiement</h3>
+        <p class="text-gray-600 mt-2">Veuillez vérifier la notification sur votre téléphone pour approuver la transaction. Attente ...</p>
       </div>
     </div>
 
@@ -174,7 +174,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import DefaultLayout from '../layouts/DefaultLayout.vue';
 import { useUserNotification } from '../config/userNotification.js';
-import { orderService } from '../config/api.js';
+import { orderService, paymentService } from '../config/api.js';
 
 const route = useRoute();
 const router = useRouter();
@@ -269,12 +269,22 @@ const formatMontant = (montant) => {
 };
 
 const getOperatorName = (operator) => {
-  const operators = { 'moov_money': 'Moov Money', 'mixx_by_yas': 'MIXX by YAS' };
+  const operators = { 
+    'moov': 'Moov Money', 
+    'mixx': 'MIXX by YAS',
+    'FLOOZ': 'Moov Money', 
+    'TMONEY': 'MIXX by YAS' 
+  };
   return operators[operator] || operator;
 };
 
 const getOperatorImage = (operator) => {
-  const images = { 'moov': '/src/assets/moov.png', 'mixx': '/src/assets/mixx.png' };
+  const images = { 
+    'moov': '/src/assets/moov.png', 
+    'mixx': '/src/assets/mixx.png',
+    'FLOOZ': '/src/assets/moov.png', 
+    'TMONEY': '/src/assets/mixx.png' 
+  };
   return images[operator] || '';
 };
 
@@ -307,43 +317,182 @@ const confirmPayment = async () => {
   isLoading.value = true;
   try {
     
-   
+    // 1. Appel à l'API d'initiation PayGate
+    const paymentData = {
+      orderId: orderInfo.value.commandeId,
+      phone_number: numeroPaiement.value.replace(/\s/g, ''),
+      network: selectedOperator.value === 'moov' || selectedOperator.value === 'FLOOZ' ? 'FLOOZ' : 'TMONEY'
+    };
+
+    console.log('paymentData', paymentData);
+
+    const initiationResponse = await paymentService.initiatePayGatePayment(paymentData);
+    
+    if (initiationResponse.status === 200) {
+      const paygateData = initiationResponse.data.data;
+      
       // 2. Stop the button loader and show the pending modal
       isLoading.value = false;
       showPendingModal.value = true;
-      showSuccess('Paiement initié !');
+      showSuccess('Paiement PayGate initié avec succès !');
 
-      // 3. Simulate the 10-second wait for user confirmation on their phone
-      await new Promise(resolve => setTimeout(resolve, 10000));
-
-      // 4. Appel à l'API de validation du paiement
-      const paymentData = {
-        operateur: selectedOperator.value === 'moov' ? 'moov_money' : 'mixx_by_yas',
-        numero: numeroPaiement.value.replace(/\s/g, ''),
-        montant: parseFloat(orderInfo.value.montant)
-      };
-
-      const validationResponse = await orderService.validateOnlinePayment(orderInfo.value.commandeId, paymentData);
+      // 3. Premier appel de vérification à 20 secondes
+      await new Promise(resolve => setTimeout(resolve, 18000));
       
-      if (validationResponse.status === 200) {
-        //console.log(validationResponse.data.data);
-        // 5. Hide the modal, show final success, and redirect
-        showPendingModal.value = false;
-        showSuccess('Confirmation reçue ! Paiement réussi.');
-        sessionStorage.removeItem('orderData');
+      try {
+        const firstStatusResponse = await paymentService.checkPayGateStatus(paygateData.tx_reference);
+        console.log('Statut PayGate à 20s:', firstStatusResponse.data);
         
-        // Redirect after a short delay to allow user to read the final success message
-        setTimeout(() => {
+        // Si le paiement est confirmé à 20s, on redirige immédiatement
+        if (firstStatusResponse.data.message?.type === 'success') {
+          showPendingModal.value = false;
+          sessionStorage.removeItem('orderData');
+          
+          router.push({
+            path: '/thanks_order',
+            query: {
+              orderId: paygateData.order_id,
+              paymentStatus: firstStatusResponse.data.message.type,
+              paymentMessage: firstStatusResponse.data.message.message,
+              paymentTitle: firstStatusResponse.data.message.title
+            }
+          });
+          return;
+        }
+        
+        // Si le statut est "info" (en cours), on attend encore 30 secondes (total 50s)
+        if (firstStatusResponse.data.message?.type === 'info') {
+          console.log('Paiement en cours, attente supplémentaire de 30s...');
+          await new Promise(resolve => setTimeout(resolve, 30000));
+          
+          // Deuxième appel de vérification à 50 secondes
+          const secondStatusResponse = await paymentService.checkPayGateStatus(paygateData.tx_reference);
+          console.log('Statut PayGate à 50s:', secondStatusResponse.data);
+          
+          // Si le statut est toujours "info" à 50s, on attend encore 20 secondes (total 70s)
+          if (secondStatusResponse.data.message?.type === 'info') {
+            console.log('Paiement toujours en cours, attente supplémentaire de 20s...');
+            await new Promise(resolve => setTimeout(resolve, 15000));
+            
+            // Troisième appel de vérification à 70 secondes
+            const thirdStatusResponse = await paymentService.checkPayGateStatus(paygateData.tx_reference);
+            console.log('Statut PayGate à 70s:', thirdStatusResponse.data);
+            
+            // Si le statut est toujours "info" à 70s, on annule automatiquement
+            if (thirdStatusResponse.data.message?.type === 'info') {
+              console.log('Paiement toujours en cours à 70s, annulation automatique...');
+              
+              try {
+                // Appel à l'API d'annulation
+                const cancelResponse = await paymentService.cancelPayment(paygateData.order_id);
+                
+                if (cancelResponse.status === 200) {
+                  showPendingModal.value = false;
+                  sessionStorage.removeItem('orderData');
+                  
+                  // Rediriger vers thanks_order comme paiement échoué
+                  router.push({
+                    path: '/thanks_order',
+                    query: {
+                      orderId: paygateData.order_id,
+                      paymentStatus: 'error',
+                      paymentMessage: 'Paiement annulé automatiquement - délai d\'attente dépassé',
+                      paymentTitle: 'Paiement annulé'
+                    }
+                  });
+                  return;
+                }
+              } catch (cancelError) {
+                console.error('Erreur lors de l\'annulation automatique:', cancelError);
+                // En cas d'erreur d'annulation, on redirige quand même
+                showPendingModal.value = false;
+                sessionStorage.removeItem('orderData');
+                
+                router.push({
+                  path: '/thanks_order',
+                  query: {
+                    orderId: paygateData.order_id,
+                    paymentStatus: 'error',
+                    paymentMessage: 'Erreur lors de l\'annulation automatique',
+                    paymentTitle: 'Paiement échoué'
+                  }
+                });
+                return;
+              }
+            } else {
+              // Si le statut a changé à 70s, on redirige avec le statut final
+              showPendingModal.value = false;
+              sessionStorage.removeItem('orderData');
+              
+              router.push({
+                path: '/thanks_order',
+                query: {
+                  orderId: paygateData.order_id,
+                  paymentStatus: thirdStatusResponse.data.message.type,
+                  paymentMessage: thirdStatusResponse.data.message.message,
+                  paymentTitle: thirdStatusResponse.data.message.title
+                }
+              });
+              return;
+            }
+          } else {
+            // Si le statut a changé à 50s, on redirige avec le statut actuel
+            showPendingModal.value = false;
+            sessionStorage.removeItem('orderData');
+            
             router.push({
               path: '/thanks_order',
               query: {
-                orderId: validationResponse.data.data.id
+                orderId: paygateData.order_id,
+                paymentStatus: secondStatusResponse.data.message.type,
+                paymentMessage: secondStatusResponse.data.message.message,
+                paymentTitle: secondStatusResponse.data.message.title
               }
             });
-        }, 1000);
-     
+            return;
+          }
+        }
+        
+        // Si le statut est "warning" (annulé) ou "error" (échoué), on redirige immédiatement
+        if (firstStatusResponse.data.message?.type === 'warning' || firstStatusResponse.data.message?.type === 'error') {
+          showPendingModal.value = false;
+          sessionStorage.removeItem('orderData');
+          
+          router.push({
+            path: '/thanks_order',
+            query: {
+              orderId: paygateData.order_id,
+              paymentStatus: firstStatusResponse.data.message.type,
+              paymentMessage: firstStatusResponse.data.message.message,
+              paymentTitle: firstStatusResponse.data.message.title
+            }
+          });
+          return;
+        }
+        
+        // Pour tout autre statut inattendu, on redirige avec le statut actuel
+        showPendingModal.value = false;
+        sessionStorage.removeItem('orderData');
+        
+        router.push({
+          path: '/thanks_order',
+          query: {
+            orderId: paygateData.order_id,
+            paymentStatus: firstStatusResponse.data.message.type,
+            paymentMessage: firstStatusResponse.data.message.message,
+            paymentTitle: firstStatusResponse.data.message.title
+          }
+        });
+        return;
+        
+      } catch (error) {
+        console.error('Erreur lors de la vérification du statut PayGate:', error);
+        showError('Erreur lors de la vérification du paiement. Veuillez réessayer.');
+        showPendingModal.value = false;
+        isLoading.value = false;
+      }
     } else {
-      throw new Error(testResponse.data.message || 'Erreur lors du test de la commande');
+      throw new Error(initiationResponse.data.message || 'Erreur lors de l\'initiation du paiement PayGate');
     }
 
   } catch (error) {
@@ -355,9 +504,34 @@ const confirmPayment = async () => {
   }
 };
 
-const goBack = () => {
-  sessionStorage.removeItem('orderData');
-  router.go(-1);
+const cancelOrder = async () => {
+  if (!orderInfo.value.commandeId) {
+    showError('ID de commande introuvable');
+    return;
+  }
+
+  try {
+    isLoading.value = true;
+    
+    // Appel à l'API d'annulation de commande
+    const response = await orderService.cancelOrder(orderInfo.value.commandeId);
+    
+    if (response.status === 200) {
+      showSuccess('Commande annulée avec succès');
+      sessionStorage.removeItem('orderData');
+      
+      // Redirection vers l'accueil
+      router.push('/');
+    } else {
+      throw new Error('Erreur lors de l\'annulation de la commande');
+    }
+  } catch (error) {
+    console.error('Erreur d\'annulation:', error);
+    const errorMessage = error.response?.data?.message || error.message || 'Erreur lors de l\'annulation de la commande';
+    showError(errorMessage);
+  } finally {
+    isLoading.value = false;
+  }
 };
 
 // --- Lifecycle ---

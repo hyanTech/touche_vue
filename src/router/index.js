@@ -40,6 +40,7 @@ import EditPub from '../admin/settings/pub/edit_pub.vue'
 import CreatePub from '../admin/settings/pub/create_pub.vue'
 import Terme from '../user/terme.vue'
 import Politicy from '../user/politicy.vue'
+import APropos from '../user/a_propos.vue'
 
 const routes = [
   {
@@ -86,6 +87,11 @@ const routes = [
     path: '/politicy',
     name: 'Politicy',
     component: Politicy
+  },
+  {
+    path: '/a_propos',
+    name: 'APropos',
+    component: APropos
   },
   {
     path: '/pay_confirm',

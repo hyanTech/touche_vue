@@ -1,5 +1,33 @@
 <template>
     <DefaultLayout>
+        <!-- Notification d'alerte -->
+        <div v-if="notification.show" class="fixed top-4 right-4 z-50 max-w-sm w-full">
+            <div :class="[
+                'rounded-lg p-4 shadow-lg border-l-4',
+                notification.type === 'success' 
+                    ? 'bg-green-50 border-green-400 text-green-800' 
+                    : 'bg-red-50 border-red-400 text-red-800'
+            ]">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <i v-if="notification.type === 'success'" class="fa-solid fa-check-circle text-green-400 text-xl"></i>
+                        <i v-else class="fa-solid fa-exclamation-circle text-red-400 text-xl"></i>
+                    </div>
+                    <div class="ml-3 flex-1">
+                        <p class="text-sm font-medium" v-html="notification.message"></p>
+                    </div>
+                    <div class="ml-4 flex-shrink-0">
+                        <button 
+                            @click="notification.show = false"
+                            class="inline-flex text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600 transition-colors"
+                        >
+                            <i class="fa-solid fa-times text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="bg-bg-secondary">
             <div class="container mx-auto px-4 py-12 sm:py-16">
 
@@ -85,28 +113,32 @@
                         <form @submit.prevent="handleSubmit">
                             <div class="space-y-6">
                                 <div>
-                                    <label for="name" class="block text-sm font-medium text-text-secondary">Nom complet</label>
+                                    <label for="nom_complet" class="block text-sm font-medium text-text-secondary">Nom complet</label>
                                     <div class="mt-1">
-                                        <input v-model="form.name" type="text" name="name" id="name" required class="block w-full px-3 py-2 border border-border-color rounded-md shadow-sm placeholder-text-light focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                                        <input v-model="form.nom_complet" type="text" name="nom_complet" id="nom_complet" required class="block w-full px-3 py-2 border border-border-color rounded-md shadow-sm placeholder-text-light focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
                                     </div>
+                                    <p v-if="errors.nom_complet" class="mt-1 text-sm text-red-600">{{ errors.nom_complet }}</p>
                                 </div>
                                 <div>
                                     <label for="email" class="block text-sm font-medium text-text-secondary">Adresse e-mail</label>
                                     <div class="mt-1">
                                         <input v-model="form.email" type="email" name="email" id="email" required class="block w-full px-3 py-2 border border-border-color rounded-md shadow-sm placeholder-text-light focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
                                     </div>
+                                    <p v-if="errors.email" class="mt-1 text-sm text-red-600">{{ errors.email }}</p>
                                 </div>
                                 <div>
-                                    <label for="subject" class="block text-sm font-medium text-text-secondary">Sujet</label>
+                                    <label for="objet" class="block text-sm font-medium text-text-secondary">Objet</label>
                                     <div class="mt-1">
-                                        <input v-model="form.subject" type="text" name="subject" id="subject" required class="block w-full px-3 py-2 border border-border-color rounded-md shadow-sm placeholder-text-light focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                                        <input v-model="form.objet" type="text" name="objet" id="objet" required class="block w-full px-3 py-2 border border-border-color rounded-md shadow-sm placeholder-text-light focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
                                     </div>
+                                    <p v-if="errors.objet" class="mt-1 text-sm text-red-600">{{ errors.objet }}</p>
                                 </div>
                                 <div>
                                     <label for="message" class="block text-sm font-medium text-text-secondary">Message</label>
                                     <div class="mt-1">
                                         <textarea v-model="form.message" id="message" name="message" rows="4" required class="block w-full px-3 py-2 border border-border-color rounded-md shadow-sm placeholder-text-light focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"></textarea>
                                     </div>
+                                    <p v-if="errors.message" class="mt-1 text-sm text-red-600">{{ errors.message }}</p>
                                 </div>
                                 <div>
                                     <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-hover-color focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
@@ -147,9 +179,24 @@ export default {
 
         // État réactif pour les champs du formulaire
         const form = ref({
-            name: '',
+            nom_complet: '',
             email: '',
-            subject: '',
+            objet: '',
+            message: ''
+        });
+
+        // État réactif pour les erreurs de validation
+        const errors = ref({
+            nom_complet: '',
+            email: '',
+            objet: '',
+            message: ''
+        });
+
+        // État réactif pour les notifications
+        const notification = ref({
+            show: false,
+            type: 'success', // 'success' ou 'error'
             message: ''
         });
 
@@ -165,19 +212,113 @@ export default {
             }
         };
 
-        // Méthode pour gérer la soumission du formulaire
-        function handleSubmit() {
-            // Dans une application réelle, vous enverriez ces données à un serveur
-            console.log('Données du formulaire soumises:', form.value);
-            alert('Merci pour votre message ! Nous vous répondrons bientôt.');
-            
-            // Réinitialiser le formulaire après soumission
-            form.value = {
-                name: '',
+        // Validation côté client
+        function validateForm() {
+            // Réinitialiser les erreurs
+            errors.value = {
+                nom_complet: '',
                 email: '',
-                subject: '',
+                objet: '',
                 message: ''
             };
+
+            let isValid = true;
+
+            // Validation du nom complet
+            if (!form.value.nom_complet.trim()) {
+                errors.value.nom_complet = 'Le nom complet est requis';
+                isValid = false;
+            } else if (form.value.nom_complet.trim().length < 2 || form.value.nom_complet.trim().length > 100) {
+                errors.value.nom_complet = 'Le nom complet doit contenir entre 2 et 100 caractères';
+                isValid = false;
+            }
+
+            // Validation de l'email
+            if (!form.value.email.trim()) {
+                errors.value.email = 'L\'email est requis';
+                isValid = false;
+            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email)) {
+                errors.value.email = 'L\'email doit être une adresse email valide';
+                isValid = false;
+            }
+
+            // Validation de l'objet
+            if (!form.value.objet.trim()) {
+                errors.value.objet = 'L\'objet est requis';
+                isValid = false;
+            } else if (form.value.objet.trim().length < 5 || form.value.objet.trim().length > 200) {
+                errors.value.objet = 'L\'objet doit contenir entre 5 et 200 caractères';
+                isValid = false;
+            }
+
+            // Validation du message
+            if (!form.value.message.trim()) {
+                errors.value.message = 'Le message est requis';
+                isValid = false;
+            } else if (form.value.message.trim().length < 10 || form.value.message.trim().length > 2000) {
+                errors.value.message = 'Le message doit contenir entre 10 et 2000 caractères';
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        // Méthode pour afficher une notification
+        function showNotification(type, message) {
+            notification.value = {
+                show: true,
+                type,
+                message
+            };
+            
+            // Masquer automatiquement la notification après 5 secondes
+            setTimeout(() => {
+                notification.value.show = false;
+            }, 5000);
+        }
+
+        // Méthode pour gérer la soumission du formulaire
+        async function handleSubmit() {
+            // Valider le formulaire avant envoi
+            if (!validateForm()) {
+                return;
+            }
+
+            try {
+                // Envoyer le message via l'API
+                const response = await contactService.sendMessage(form.value);
+                
+                if (response.status === 200) {
+                    // Succès
+                    showNotification('success', 'Merci pour votre message ! Nous vous répondrons bientôt.');
+                    
+                    // Réinitialiser le formulaire après soumission
+                    form.value = {
+                        nom_complet: '',
+                        email: '',
+                        objet: '',
+                        message: ''
+                    };
+                    
+                    // Réinitialiser les erreurs
+                    errors.value = {
+                        nom_complet: '',
+                        email: '',
+                        objet: '',
+                        message: ''
+                    };
+                }
+            } catch (error) {
+                console.error('Erreur lors de l\'envoi du message:', error);
+                
+                if (error.response?.data?.errors) {
+                    // Afficher les erreurs de validation du serveur
+                    const errorMessages = error.response.data.errors.map(err => err.msg).join('\n');
+                    showNotification('error', `Erreur de validation:\n${errorMessages}`);
+                } else {
+                    showNotification('error', 'Une erreur est survenue lors de l\'envoi du message. Veuillez réessayer.');
+                }
+            }
         }
 
         // Charger les informations de contact au montage du composant
@@ -188,6 +329,8 @@ export default {
         return {
             contactInfo,
             form,
+            errors,
+            notification,
             handleSubmit
         };
     }

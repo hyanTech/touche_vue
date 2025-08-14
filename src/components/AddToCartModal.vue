@@ -17,8 +17,10 @@
                class="w-16 h-16 object-cover rounded-lg mr-4">
           <div>
             <h4 class="font-semibold text-text-primary">{{ product?.nom || product?.name }}</h4>
-            <p class="text-primary font-bold">{{ formatPrice(product?.prix_promotion || product?.prix || product?.price) }} FCFA</p>
-            <p class="text-sm text-text-secondary">Stock: {{ product?.stock }} unités</p>
+            <p class="text-primary font-bold">
+              {{ formatPrice(getProductPrice(product)) }} FCFA
+            </p>
+            <!-- <p class="text-sm text-text-secondary">Stock: {{ product?.stock }} unités</p> -->
           </div>
         </div>
 
@@ -153,6 +155,11 @@ watch(() => props.show, (newValue) => {
 });
 
 // Méthodes
+const getProductPrice = (product) => {
+  if (!product) return 0;
+  return (product.prix_promotion && product.prix_promotion > 0) ? product.prix_promotion : product.prix;
+};
+
 const resetForm = () => {
   selectedTaille.value = '';
   selectedCouleur.value = '';
@@ -182,14 +189,16 @@ const confirmAddToCart = () => {
   // Validation
   let hasError = false;
   
-  if (props.product?.tailles && props.product.tailles.length > 0 && !selectedTaille.value) {
+  // Vérifier si le produit a des tailles et si une taille est sélectionnée
+  if (props.product?.tailles && Array.isArray(props.product.tailles) && props.product.tailles.length > 0 && !selectedTaille.value) {
     showTailleError.value = true;
     hasError = true;
   } else {
     showTailleError.value = false;
   }
   
-  if (props.product?.couleurs && props.product.couleurs.length > 0 && !selectedCouleur.value) {
+  // Vérifier si le produit a des couleurs et si une couleur est sélectionnée
+  if (props.product?.couleurs && Array.isArray(props.product.couleurs) && props.product.couleurs.length > 0 && !selectedCouleur.value) {
     showCouleurError.value = true;
     hasError = true;
   } else {
@@ -203,8 +212,9 @@ const confirmAddToCart = () => {
   // Créer l'objet produit avec les options sélectionnées
   const productWithOptions = {
     ...props.product,
-    selectedSize: selectedTaille.value,
-    selectedColor: selectedCouleur.value
+    selectedSize: selectedTaille.value || null,
+    selectedColor: selectedCouleur.value || null,
+    prix: getProductPrice(props.product) // S'assurer que le prix correct est transmis
   };
   
   // Ajouter au panier

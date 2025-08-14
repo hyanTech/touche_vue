@@ -33,10 +33,27 @@ const loadDelivery = async () => {
         const response = await deliveryService.getDelivery(shippingTypeId);
         const deliveryData = response.data.data;
         
+        // Parser le champ zone qui est retourné comme une chaîne JSON
+        let zones = [];
+        try {
+            if (deliveryData.zone && deliveryData.zone !== "[]") {
+                if (typeof deliveryData.zone === 'string') {
+                    zones = JSON.parse(deliveryData.zone);
+                } else if (Array.isArray(deliveryData.zone)) {
+                    zones = deliveryData.zone;
+                }
+            }
+        } catch (parseError) {
+            console.warn('Erreur lors du parsing JSON pour la zone:', deliveryData.id, parseError);
+            zones = [];
+        }
+        
+        console.log('Zones parsées:', zones);
+        
         form.value = {
             nom: deliveryData.nom,
             description: deliveryData.description || '',
-            zone: deliveryData.zone || [],
+            zone: zones,
             prix: parseFloat(deliveryData.prix),
             etat: deliveryData.etat
         };

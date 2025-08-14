@@ -369,7 +369,7 @@ export default {
     })
     
     // Options disponibles
-    const availableTailles = ['XS', 'S', 'M', 'L', 'XL', 'XXL']
+    const availableTailles = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'F', '3XL', '4XL', '5XL']
     const availableCouleurs = ['Rouge', 'Bleu', 'Vert', 'Jaune', 'Noir', 'Blanc', 'Gris', 'Rose', 'Orange', 'Violet']
     
     // Charger les catégories

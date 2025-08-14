@@ -85,7 +85,7 @@
                                         <input 
                                             type="number" 
                                             id="product-prix-promotion" 
-                                            v-model="product.prix_promotion" 
+                                            :value="product.prix_promotion || ''" 
                                             step="0.01"
                                             class="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-300" 
                                             placeholder="24.99"
@@ -233,9 +233,9 @@
                                     @change="handleImageSelect($event, 'cover')"
                                 />
                                 <!-- Aperçu de l'image de couverture -->
-                                <div v-if="product.image_cover || product.image_cover_url" class="mt-2 relative">
+                                <div v-if="product.image_cover" class="mt-2 relative">
                                     <img 
-                                        :src="getImagePreview(product.image_cover || product.image_cover_url)" 
+                                        :src="getImageUrl(product.image_cover)" 
                                         class="w-full h-32 object-cover rounded-lg" 
                                         alt="Image de couverture"
                                         @error="handleImageError"
@@ -248,9 +248,6 @@
                                     >
                                         ×
                                     </button>
-                                    <div class="mt-2 text-xs text-gray-500">
-                                        {{ product.image_cover ? 'Nouvelle image sélectionnée' : 'Image existante' }}
-                                    </div>
                                 </div>
                             </div>
                             
@@ -259,6 +256,7 @@
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">
                                     Images de la galerie
                                 </label>
+                                
                                 <div 
                                     class="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-indigo-400 transition-colors duration-300"
                                     @click="$refs.imageGalleryInput.click()"
@@ -287,35 +285,18 @@
                                     @change="handleImageSelect($event, 'gallery')"
                                 />
                                 <!-- Aperçu des images de galerie -->
-                                <div v-if="(product.images && product.images.length > 0) || (product.images_urls && product.images_urls.length > 0)" class="mt-2 grid grid-cols-2 gap-2">
-                                    <!-- Images existantes -->
-                                    <div v-for="(image, index) in product.images_urls" :key="`existing-${index}`" class="relative">
+                                <div v-if="product.images && product.images.length > 0" class="mt-2 grid grid-cols-2 gap-2">
+                                    <div v-for="(image, index) in product.images" :key="index" class="relative">
                                         <img 
-                                            :src="getImagePreview(image)" 
-                                            class="w-full h-20 object-cover rounded-lg"
-                                            @error="handleImageError"
-                                            loading="lazy"
-                                        />
-                                                                                 <button 
-                                             @click="confirmDeleteExistingImage(index, $event)"
-                                             type="button"
-                                             class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
-                                             title="Supprimer l'image"
-                                         >
-                                             ×
-                                         </button>
-                                    </div>
-                                    <!-- Nouvelles images -->
-                                    <div v-for="(image, index) in product.images" :key="`new-${index}`" class="relative">
-                                        <img 
-                                            :src="getImagePreview(image)" 
+                                            :src="getImageUrl(image.filename || image)" 
                                             class="w-full h-20 object-cover rounded-lg"
                                             @error="handleImageError"
                                             loading="lazy"
                                         />
                                         <button 
-                                            @click="removeNewGalleryImage(index)"
+                                            @click="removeGalleryImage(index)"
                                             class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                                            title="Supprimer l'image"
                                         >
                                             ×
                                         </button>
@@ -350,7 +331,7 @@
 </template>
 
 <script>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
 import { productService, categoryService } from '../../../config/api.js'
@@ -388,17 +369,25 @@ export default {
             couleurs: [],
             etat: true,
             image_cover: null,
-            image_cover_url: null, // URL de l'image existante
-            images: [],
-            images_urls: [] // URLs des images existantes
+            images: []
         })
+        
+       
         
         // Fonction pour nettoyer les valeurs numériques
         const cleanNumericValue = (value) => {
             if (value === null || value === undefined || value === '' || isNaN(value)) {
                 return null
             }
-            return Number(value)
+            const numValue = Number(value)
+            if (isNaN(numValue)) {
+                return null
+            }
+            // Pour le prix promotionnel, retourner null si c'est 0 (pour permettre la suppression)
+            if (numValue === 0) {
+                return null
+            }
+            return numValue
         }
         
         // Erreurs de validation
@@ -416,7 +405,7 @@ export default {
         })
         
         // Options disponibles
-        const availableTailles = ['XS', 'S', 'M', 'L', 'XL', 'XXL']
+        const availableTailles = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'F', '3XL', '4XL', '5XL']
         const availableCouleurs = ['Rouge', 'Bleu', 'Vert', 'Jaune', 'Noir', 'Blanc', 'Gris', 'Rose', 'Orange', 'Violet']
         
         // Charger les catégories
@@ -436,8 +425,43 @@ export default {
                 const productId = route.params.id
                 const response = await productService.getProduct(productId)
                 const productData = response.data.data
+               
                 
-                console.log('Données du produit reçues:', productData)
+                // Parser les champs JSON pour les tailles et couleurs
+                let tailles = []
+                let couleurs = []
+                
+                try {
+                    // Gérer les tailles
+                    if (productData.tailles) {
+                        if (typeof productData.tailles === 'string') {
+                            if (productData.tailles === "[]" || productData.tailles === "") {
+                                tailles = []
+                            } else {
+                                tailles = JSON.parse(productData.tailles)
+                            }
+                        } else if (Array.isArray(productData.tailles)) {
+                            tailles = productData.tailles
+                        }
+                    }
+                    
+                    // Gérer les couleurs
+                    if (productData.couleurs) {
+                        if (typeof productData.couleurs === 'string') {
+                            if (productData.couleurs === "[]" || productData.couleurs === "" || productData.couleurs === "false") {
+                                couleurs = []
+                            } else {
+                                couleurs = JSON.parse(productData.couleurs)
+                            }
+                        } else if (Array.isArray(productData.couleurs)) {
+                            couleurs = productData.couleurs
+                        }
+                    }
+                } catch (parseError) {
+                    console.warn('Erreur lors du parsing JSON pour les tailles/couleurs:', parseError)
+                    tailles = []
+                    couleurs = []
+                }
                 
                 // Mapper les données du produit
                 product.nom = productData.nom || ''
@@ -446,27 +470,26 @@ export default {
                 product.prix_promotion = productData.prix_promotion || null
                 product.stock = productData.stock || 0
                 product.categoryId = productData.categoryId || productData.category_id || ''
-                product.tailles = productData.tailles || []
-                product.couleurs = productData.couleurs || []
+                product.tailles = tailles
+                product.couleurs = couleurs
                 product.etat = productData.etat !== undefined ? productData.etat : true
-                product.image_cover_url = productData.image_cover || null
+                product.image_cover = productData.image_cover || null
                 
-                // Gérer les images de galerie (peuvent être des objets ou des chaînes)
+                // Gérer les images de galerie
                 if (productData.images && Array.isArray(productData.images)) {
-                    product.images_urls = productData.images.map(img => {
-                        // Si c'est un objet avec filename, extraire le filename
-                        if (typeof img === 'object' && img.filename) {
-                            return img.filename
-                        }
-                        // Sinon, utiliser directement la valeur
-                        return img
-                    })
+                    product.images = productData.images
+                } else if (typeof productData.images === 'string') {
+                    try {
+                        product.images = JSON.parse(productData.images)
+                    } catch (parseError) {
+                        console.warn('Erreur lors du parsing JSON pour les images:', parseError)
+                        product.images = []
+                    }
                 } else {
-                    product.images_urls = []
+                    product.images = []
                 }
                 
-                console.log('Image de couverture mappée:', product.image_cover_url)
-                console.log('Images de galerie mappées:', product.images_urls)
+               
                 
             } catch (err) {
                 console.error('Erreur lors du chargement du produit:', err)
@@ -517,8 +540,8 @@ export default {
             
             // Validation du prix de promotion (optionnel)
             const prixPromotion = cleanNumericValue(product.prix_promotion)
-            if (prixPromotion !== null && prixPromotion <= 0) {
-                errors.prix_promotion = 'Le prix de promotion doit être supérieur à 0'
+            if (prixPromotion !== null && prixPromotion < 0) {
+                errors.prix_promotion = 'Le prix de promotion ne peut pas être négatif'
                 isValid = false
             }
             
@@ -574,7 +597,6 @@ export default {
         const removeCoverImage = () => {
             // Supprimer l'image de couverture (nouvelle ou existante)
             product.image_cover = null
-            product.image_cover_url = null
         }
         
         const confirmDeleteExistingImage = (index, event) => {
@@ -645,24 +667,21 @@ export default {
         }
         
         const removeGalleryImage = (index) => {
-            // Fonction legacy pour compatibilité
-            removeExistingGalleryImage(index)
+            if (product.images && product.images[index]) {
+                product.images.splice(index, 1)
+            }
         }
         
         const getImagePreview = (file) => {
             console.log('getImagePreview appelé avec:', file)
+            
+            // Si c'est un fichier File (nouvelle image)
             if (file instanceof File) {
                 return URL.createObjectURL(file)
             }
-            // Pour les images existantes, utiliser getImageUrl
-            if (typeof file === 'string') {
-                return getImageUrl(file)
-            }
-            // Si c'est un objet avec filename (structure de l'API)
-            if (typeof file === 'object' && file.filename) {
-                return getImageUrl(file.filename)
-            }
-            return file
+            
+            // Pour les autres types, utiliser getImageUrl
+            return getImageUrl(file)
         }
         
         // Soumission du formulaire
@@ -692,9 +711,12 @@ export default {
                     existing_images: product.images_urls
                 }
                 
-                // Gérer le prix de promotion (ne l'inclure que s'il a une valeur valide)
+                // Gérer le prix de promotion (inclure même si 0 ou null pour permettre la suppression)
                 const prixPromotion = cleanNumericValue(product.prix_promotion)
-                if (prixPromotion && prixPromotion > 0) {
+                // Si le prix promotionnel est 0, vide ou null, l'envoyer explicitement comme null
+                if (prixPromotion === null || prixPromotion === 0) {
+                    productData.prix_promotion = null
+                } else {
                     productData.prix_promotion = prixPromotion
                 }
                 
@@ -746,7 +768,6 @@ export default {
             errors,
             isSubmitting,
             isLoading,
-            isDeletingImage,
             categories,
             availableTailles,
             availableCouleurs,
@@ -755,11 +776,9 @@ export default {
             handleImageSelect,
             handleImageDrop,
             removeCoverImage,
-            confirmDeleteExistingImage,
-            removeExistingGalleryImage,
-            removeNewGalleryImage,
             removeGalleryImage,
             getImagePreview,
+            getImageUrl,
             handleImageError,
             submitForm,
             goBack

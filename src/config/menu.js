@@ -8,8 +8,9 @@ export const fetchActiveCategories = async () => {
     // Vérifier que la réponse a la structure attendue
     if (response.data && response.data.success && response.data.data) {
       return response.data.data.map(category => ({
+        id: category.id,
         name: category.nom,
-        href: `/produits/category/${category.id}`,
+        href: `/produits/category/${category.id}/${encodeURIComponent(category.nom)}`,
         icon: category.icone || 'fa-solid fa-tag',
         description: category.description
       }));
@@ -17,6 +18,7 @@ export const fetchActiveCategories = async () => {
     return [];
   } catch (error) {
     console.error('Erreur lors de la récupération des catégories:', error);
+    // Retourner un tableau vide en cas d'erreur pour éviter les crashs
     return [];
   }
 };

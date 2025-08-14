@@ -79,7 +79,7 @@ const loadCategories = async () => {
                 name: category.nom,
                 icon: category.icone || 'fa-solid fa-tag',
                 description: category.description,
-                href: `/produits/category/${category.id}`
+                href: `/produits/category/${category.id}/${category.nom}`
             }));
         } else {
             throw new Error('Format de réponse invalide');
