@@ -13,7 +13,7 @@
       <div class="p-6">
         <!-- Produit info -->
         <div class="flex items-center mb-6">
-          <img :src="getImageUrl(product?.image_cover || product?.imageUrl)" :alt="product?.nom || product?.name" 
+          <img :src="getImageUrl(product?.image_cover || product?.imageUrl || product?.image)" :alt="product?.nom || product?.name" 
                class="w-16 h-16 object-cover rounded-lg mr-4">
           <div>
             <h4 class="font-semibold text-text-primary">{{ product?.nom || product?.name }}</h4>
@@ -157,7 +157,15 @@ watch(() => props.show, (newValue) => {
 // Méthodes
 const getProductPrice = (product) => {
   if (!product) return 0;
-  return (product.prix_promotion && product.prix_promotion > 0) ? product.prix_promotion : product.prix;
+  // Vérifier d'abord les champs originaux, puis les champs mappés
+  if (product.prix_promotion && product.prix_promotion > 0) {
+    return product.prix_promotion;
+  } else if (product.prix) {
+    return product.prix;
+  } else if (product.price) {
+    return product.price;
+  }
+  return 0;
 };
 
 const resetForm = () => {
@@ -214,7 +222,8 @@ const confirmAddToCart = () => {
     ...props.product,
     selectedSize: selectedTaille.value || null,
     selectedColor: selectedCouleur.value || null,
-    prix: getProductPrice(props.product) // S'assurer que le prix correct est transmis
+    prix: getProductPrice(props.product), // S'assurer que le prix correct est transmis
+    prix_promotion: props.product.prix_promotion || props.product.originalPrice || null
   };
   
   // Ajouter au panier

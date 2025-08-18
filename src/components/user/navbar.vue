@@ -4,7 +4,7 @@
           <div class="scrolling-text">
         <div class="text-container">
           <span class="text-item">Livraison gratuite pour les commandes de plus de 50.000f</span>
-          <span class="text-item">Livraison des commandes dans un délai de 24h à 48h</span>
+          <span class="text-item">Livraison dans un délai de 24/48h</span>
         </div>
       </div>
   </div>
@@ -59,7 +59,6 @@
               <!-- Sub-menu -->
               <div v-if="link.sublinks && link.sublinks.length > 0" class="absolute top-full right-0 bg-white shadow-lg rounded-md mt-2 w-80 p-4 opacity-0 group-hover:opacity-100 invisible group-hover:visible transition-all duration-300 grid grid-cols-2 gap-4">
                 <div v-for="sublink in link.sublinks" :key="sublink.name" class="flex items-start space-x-3 p-2 rounded-md hover:bg-accent transition-colors">
-                  <i v-if="sublink.icon" :class="sublink.icon" class="text-primary mt-1"></i>
                   <div class="flex-1">
                     <router-link 
                       :to="sublink.href" 
@@ -125,7 +124,7 @@
                 autofocus
               >
             </div>
-            <button 
+            <!-- <button 
               type="submit" 
               class="px-6 py-3 bg-primary text-white rounded-full hover:bg-primary-dark transition-all duration-300 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[120px]"
               :disabled="isLoading || !searchQuery.trim()"
@@ -133,7 +132,7 @@
               <i v-if="!isLoading" class="fas fa-search mr-2"></i>
               <i v-else class="fas fa-spinner fa-spin mr-2"></i>
               <span class="font-medium">{{ isLoading ? 'Recherche...' : 'Rechercher' }}</span>
-            </button>
+            </button> -->
           </div>
         </form>
       </div>
@@ -208,8 +207,8 @@
                 <!-- Product Details -->
                 <div class="flex items-center space-x-4 mt-2 text-xs text-text-light">
                   <span v-if="product.stock > 0" class="text-green-600">
-                    <i class="fas fa-check-circle mr-1"></i>
-                    En stock <!-- ({{ product.stock }}) -->
+                    <!-- <i class="fas fa-check-circle mr-1"></i> -->
+                    <!-- En stock --> <!-- ({{ product.stock }}) -->
                   </span>
                   <span v-else class="text-red-600">
                     <i class="fas fa-times-circle mr-1"></i>
@@ -258,7 +257,7 @@
 
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { mainMenu, fetchActiveCategories } from '../../config/menu.js';
 import { productService, API_BASE_URL } from '../../config/api.js';
 import { useRouter } from 'vue-router';
@@ -329,15 +328,36 @@ const searchResults = ref([]);
 const isLoading = ref(false);
 const searchError = ref('');
 
-// ⛔️ plus de recherche automatique, donc plus de timeout
+// ✅ Recherche automatique avec debounce
+let searchTimeout = null;
 
-// ✅ Fonction appelée quand on clique sur le bouton de recherche
+// Watch pour la recherche automatique avec debounce
+watch(searchQuery, (newVal) => {
+  // Nettoyer le timeout précédent
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+  }
+  
+  // On recherche seulement si on a au moins 2 caractères
+  if (newVal.trim().length >= 2) {
+    // Debounce de 300ms pour éviter trop d'appels API
+    searchTimeout = setTimeout(() => {
+      performRealTimeSearch(newVal);
+    }, 300);
+  } else {
+    searchResults.value = [];
+    searchError.value = '';
+  }
+});
+
+// ✅ Fonction appelée quand on clique sur le bouton de recherche (pour recherche immédiate)
 const goToSearchResults = () => {
   if (!searchQuery.value.trim()) {
     searchError.value = 'Veuillez saisir une requête de recherche.';
     searchResults.value = [];
     return;
   }
+  // Recherche immédiate sans debounce
   performRealTimeSearch(searchQuery.value);
 };
 
@@ -496,6 +516,13 @@ onMounted(async () => {
     }
   } catch (error) {
     console.error('Error loading categories:', error);
+  }
+});
+
+// Nettoyer le timeout lors du démontage du composant
+onUnmounted(() => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
   }
 });
 </script>

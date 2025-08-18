@@ -76,20 +76,20 @@
     </div>
 
     <!-- Section Livraison et Paiement -->
-    <div class="bg-gray-600 py-5">
+    <div class="bg-secondary py-5">
       <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Livraison -->
         <div class="text-center mb-5">
           <div class="flex items-center justify-center space-x-3 text-gray-200 mb-3">
-            <i class="fas fa-shipping-fast text-gray-300 text-base"></i>
-            <span class="text-sm font-medium">Livraison des commandes dans un délai de 24h-48h</span>
+            <i class="fas fa-shipping-fast text-black text-base"></i>
+            <span class="text-sm  text-black font-medium">Livraison dans un délai de 24/48h</span>
           </div>
         </div>
 
         <!-- Paiement -->
         <div class="text-center mb-4">
-          <h4 class="text-base font-medium text-white mb-3">
-            <i class="fas fa-shield-alt text-gray-300 mr-2"></i>
+          <h4 class="text-base font-medium text-black mb-3">
+            <i class="fas fa-shield-alt text-black mr-2"></i>
             Paiement sécurisé
           </h4>
         </div>
@@ -100,7 +100,7 @@
             <div class="bg-white rounded p-1.5 shadow-sm">
               <img src="/src/assets/moov.png" alt="Moov Money" class="h-3 w-auto object-contain">
             </div>
-            <span class="text-gray-300 text-xs">Moov Money</span>
+            <span class="text-black text-xs">Moov Money</span>
           </div>
 
           <!-- Mixx by YAS -->
@@ -108,16 +108,16 @@
             <div class="bg-white rounded p-1.5 shadow-sm">
               <img src="/src/assets/mixx.png" alt="Mixx by YAS" class="h-3 w-auto object-contain">
             </div>
-            <span class="text-gray-300 text-xs">Mixx by YAS</span>
+            <span class="text-black text-xs">Mixx by YAS</span>
           </div>
 
           <!-- PayGate -->
-          <div class="flex items-center space-x-2">
+          <!-- <div class="flex items-center space-x-2">
             <div class="bg-white rounded p-0.5 shadow-sm">
               <div class="text-gray-700 font-medium text-xs">PayGate</div>
             </div>
             <span class="text-gray-300 text-xs">PayGate</span>
-          </div>
+          </div> -->
         </div>
       </div>
     </div>

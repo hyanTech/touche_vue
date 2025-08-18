@@ -151,7 +151,7 @@ export const productService = {
         
         // Ajouter les données du produit
         Object.keys(productData).forEach(key => {
-            if (key !== 'image_cover' && key !== 'images' && key !== 'existing_images') {
+            if (key !== 'image_cover' && key !== 'images') {
                 if (Array.isArray(productData[key])) {
                     formData.append(key, JSON.stringify(productData[key]))
                 } else {
@@ -165,16 +165,11 @@ export const productService = {
             formData.append('image_cover', productData.image_cover)
         }
         
-        // Ajouter les images multiples
+        // Ajouter les nouvelles images uniquement
         if (productData.images && productData.images.length > 0) {
             productData.images.forEach(image => {
                 formData.append('images', image)
             })
-        }
-        
-        // Ajouter les images existantes (URLs)
-        if (productData.existing_images && productData.existing_images.length > 0) {
-            formData.append('existing_images', JSON.stringify(productData.existing_images))
         }
         
         return apiClient.put(`/products/${id}`, formData, {

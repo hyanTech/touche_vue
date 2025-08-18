@@ -7,13 +7,13 @@
     <div v-if="isPageLoading" class="fixed inset-0 z-[9999] bg-white flex items-center justify-center">
       <div class="text-center">
         <img src="/src/assets/logo.png" alt="Logo" class="h-28 w-auto mx-auto mb-4 animate-pulse">
-        <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-[#393E46] mx-auto mb-4"></div>
+        <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-[#F564A9] mx-auto mb-4"></div>
         <p class="text-gray-600 font-medium">Chargement...</p>
       </div>
     </div>
 
     <!-- Page Transition Overlay -->
-    <div v-if="isPageTransitioning" class="fixed inset-0 z-[9998] bg-[#393E46] flex items-center justify-center">
+    <div v-if="isPageTransitioning" class="fixed inset-0 z-[9998] bg-[#FFC1DA] flex items-center justify-center">
       <div class="text-center text-white">
         <div class="animate-pulse">
           <img src="/src/assets/logo.png" alt="Logo" class="h-20 w-auto mx-auto mb-4">

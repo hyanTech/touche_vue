@@ -261,11 +261,180 @@ export default {
         })
 
         const availableIcons = [
-            'fas fa-tag', 'fas fa-tags', 'fas fa-box', 'fas fa-shopping-bag', 'fas fa-tshirt',
-            'fas fa-book', 'fas fa-laptop', 'fas fa-mobile-alt', 'fas fa-headphones', 'fas fa-gamepad',
-            'fas fa-dumbbell', 'fas fa-home', 'fas fa-utensils', 'fas fa-car', 'fas fa-bicycle',
-            'fas fa-baby', 'fas fa-gift', 'fas fa-heart', 'fas fa-star', 'fas fa-crown',
-            'fas fa-gem', 'fas fa-coffee', 'fas fa-pizza-slice', 'fas fa-camera'
+            // Icônes de base
+            'fas fa-tag',
+            'fas fa-tags',
+            'fas fa-box',
+            'fas fa-shopping-bag',
+            
+            // Icônes spécifiques à la lingerie
+            'fas fa-tshirt',
+            'fas fa-person-dress',
+            'fas fa-female',
+            'fas fa-venus',
+            'fas fa-heart',
+            'fas fa-star',
+            'fas fa-gem',
+            'fas fa-crown',
+            'fas fa-sparkles',
+            'fas fa-magic',
+            'fas fa-wand-magic-sparkles',
+            
+            // Icônes de vêtements et accessoires
+            'fas fa-socks',
+            'fas fa-shoe-prints',
+            'fas fa-hat-wizard',
+            'fas fa-glasses',
+            'fas fa-sunglasses',
+            'fas fa-scarf',
+            'fas fa-handbag',
+            'fas fa-purse',
+            'fas fa-wallet',
+            'fas fa-umbrella',
+            
+            // Icônes de beauté et soins
+            'fas fa-spa',
+            'fas fa-pump-soap',
+            'fas fa-bath',
+            'fas fa-shower',
+            'fas fa-hot-tub',
+            'fas fa-wind',
+            'fas fa-sun',
+            'fas fa-moon',
+            'fas fa-cloud',
+            'fas fa-rainbow',
+            
+            // Icônes de mode et style
+            'fas fa-palette',
+            'fas fa-paint-brush',
+            'fas fa-cut',
+            'fas fa-scissors',
+            'fas fa-thread',
+            'fas fa-needle',
+            'fas fa-ruler',
+            'fas fa-tape',
+            'fas fa-weight',
+            'fas fa-balance-scale',
+            
+            // Icônes de luxe et élégance
+            'fas fa-diamond',
+            'fas fa-crown',
+            'fas fa-trophy',
+            'fas fa-medal',
+            'fas fa-award',
+            'fas fa-certificate',
+            'fas fa-ribbon',
+            'fas fa-flag',
+            'fas fa-bell',
+            'fas fa-gift',
+            
+            // Icônes de confort et détente
+            'fas fa-bed',
+            'fas fa-couch',
+            'fas fa-chair',
+            'fas fa-pillow',
+            'fas fa-blanket',
+            'fas fa-fire',
+            'fas fa-flame',
+            'fas fa-lightbulb',
+            'fas fa-candle',
+            'fas fa-music',
+            
+            // Icônes de nature et éléments
+            'fas fa-leaf',
+            'fas fa-flower',
+            'fas fa-rose',
+            'fas fa-tulip',
+            'fas fa-lotus',
+            'fas fa-butterfly',
+            'fas fa-dragonfly',
+            'fas fa-bird',
+            'fas fa-dove',
+            'fas fa-swan',
+            
+            // Icônes de bijoux et accessoires
+            'fas fa-ring',
+            'fas fa-necklace',
+            'fas fa-earrings',
+            'fas fa-bracelet',
+            'fas fa-watch',
+            'fas fa-clock',
+            'fas fa-hourglass',
+            'fas fa-sandglass',
+            'fas fa-compass',
+            'fas fa-map-marker-alt',
+            
+            // Icônes de célébration et événements
+            'fas fa-birthday-cake',
+            'fas fa-champagne-glasses',
+            'fas fa-glass-cheers',
+            'fas fa-calendar',
+            'fas fa-calendar-day',
+            'fas fa-calendar-heart',
+            'fas fa-calendar-star',
+            'fas fa-calendar-check',
+            'fas fa-calendar-plus',
+            'fas fa-calendar-alt',
+            
+            // Icônes de transport et voyage
+            'fas fa-plane',
+            'fas fa-ship',
+            'fas fa-train',
+            'fas fa-bus',
+            'fas fa-taxi',
+            'fas fa-car',
+            'fas fa-motorcycle',
+            'fas fa-bicycle',
+            'fas fa-walking',
+            'fas fa-running',
+            
+            // Icônes de technologie et modernité
+            'fas fa-laptop',
+            'fas fa-mobile-alt',
+            'fas fa-tablet-alt',
+            'fas fa-tv',
+            'fas fa-camera',
+            'fas fa-video',
+            'fas fa-microphone',
+            'fas fa-headphones',
+            'fas fa-speaker',
+            'fas fa-radio',
+            
+            // Icônes de sport et activité
+            'fas fa-dumbbell',
+            'fas fa-running',
+            'fas fa-swimming-pool',
+            'fas fa-basketball-ball',
+            'fas fa-volleyball-ball',
+            'fas fa-tennis-ball',
+            'fas fa-golf-ball',
+            'fas fa-skiing',
+            'fas fa-snowboarding',
+            'fas fa-hiking',
+            
+            // Icônes de maison et décoration
+            'fas fa-home',
+            'fas fa-house',
+            'fas fa-building',
+            'fas fa-store',
+            'fas fa-shopping-mall',
+            'fas fa-warehouse',
+            'fas fa-office-building',
+            'fas fa-hospital',
+            'fas fa-school',
+            'fas fa-university',
+            
+            // Icônes de nourriture et boissons
+            'fas fa-utensils',
+            'fas fa-coffee',
+            'fas fa-tea',
+            'fas fa-wine-glass',
+            'fas fa-beer',
+            'fas fa-cocktail',
+            'fas fa-ice-cream',
+            'fas fa-cake',
+            'fas fa-cookie',
+            'fas fa-candy-cane'
         ]
 
         const loadCategory = async () => {

@@ -134,7 +134,7 @@ export default {
         },
         getDefaultMessage() {
             const messages = {
-                'success': 'Votre paiement a été traité avec succès. Votre commande est maintenant confirmée et sera traitée. Un mail de confirmation vous a été envoyé.',
+                'success': 'Votre paiement a été traité avec succès. Un mail de confirmation vous a été envoyé.',
                 'info': 'Votre paiement est en cours de traitement. Veuillez patienter pendant que nous finalisons votre transaction.',
                 'warning': 'Votre paiement a été annulé.',
                 'error': 'Votre paiement a été échoué.'
@@ -182,7 +182,7 @@ export default {
                 'success': 'Continuer mes achats',
                 'info': 'Retour à l\'accueil',
                 'warning': 'Réessayer le paiement',
-                'error': 'Contacter le support'
+                /* 'error': 'Contacter le support' */
             };
             return texts[this.paymentStatus] || 'Continuer mes achats';
         }

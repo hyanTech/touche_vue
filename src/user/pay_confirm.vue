@@ -148,7 +148,7 @@
     </div>
     
     <!-- Pending Confirmation Modal -->
-    <div v-if="showPendingModal" class="fixed inset-0 bg-gray-900/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+   <div v-if="showPendingModal" class="fixed inset-0 bg-gray-900/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center">
         <div class="relative w-16 h-16 mx-auto">
             <svg class="animate-spin h-16 w-16 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -163,6 +163,26 @@
         </div>
         <h3 class="text-xl font-bold text-gray-800 mt-6">En attente de confirmation du paiement</h3>
         <p class="text-gray-600 mt-2">Veuillez vérifier la notification sur votre téléphone pour approuver la transaction. Attente ...</p>
+        
+        <!-- Avertissement de sécurité -->
+        <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg animate-pulse">
+          <div class="flex items-center justify-center">
+            <svg class="w-5 h-5 text-yellow-600 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+            </svg>
+            <div>
+              <p class="text-sm font-medium text-yellow-800">⚠️ Paiement en cours</p>
+              <p class="text-xs text-yellow-700 mt-1">Ne fermez pas cette page et ne naviguez pas ailleurs</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Bouton d'urgence -->
+        <!-- <div class="mt-4">
+          <button @click="forceCancelPayment" class="px-4 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all duration-300">
+            🚨 Annuler le paiement
+          </button>
+        </div> -->
       </div>
     </div>
 
@@ -334,10 +354,10 @@ const confirmPayment = async () => {
       // 2. Stop the button loader and show the pending modal
       isLoading.value = false;
       showPendingModal.value = true;
-      showSuccess('Paiement PayGate initié avec succès !');
+      showSuccess('Paiement initié avec succès !');
 
       // 3. Premier appel de vérification à 20 secondes
-      await new Promise(resolve => setTimeout(resolve, 18000));
+      await new Promise(resolve => setTimeout(resolve, 10000));
       
       try {
         const firstStatusResponse = await paymentService.checkPayGateStatus(paygateData.tx_reference);
@@ -363,7 +383,7 @@ const confirmPayment = async () => {
         // Si le statut est "info" (en cours), on attend encore 30 secondes (total 50s)
         if (firstStatusResponse.data.message?.type === 'info') {
           console.log('Paiement en cours, attente supplémentaire de 30s...');
-          await new Promise(resolve => setTimeout(resolve, 30000));
+          await new Promise(resolve => setTimeout(resolve, 20000));
           
           // Deuxième appel de vérification à 50 secondes
           const secondStatusResponse = await paymentService.checkPayGateStatus(paygateData.tx_reference);
@@ -371,15 +391,6 @@ const confirmPayment = async () => {
           
           // Si le statut est toujours "info" à 50s, on attend encore 20 secondes (total 70s)
           if (secondStatusResponse.data.message?.type === 'info') {
-            console.log('Paiement toujours en cours, attente supplémentaire de 20s...');
-            await new Promise(resolve => setTimeout(resolve, 15000));
-            
-            // Troisième appel de vérification à 70 secondes
-            const thirdStatusResponse = await paymentService.checkPayGateStatus(paygateData.tx_reference);
-            console.log('Statut PayGate à 70s:', thirdStatusResponse.data);
-            
-            // Si le statut est toujours "info" à 70s, on annule automatiquement
-            if (thirdStatusResponse.data.message?.type === 'info') {
               console.log('Paiement toujours en cours à 70s, annulation automatique...');
               
               try {
@@ -428,29 +439,13 @@ const confirmPayment = async () => {
                 path: '/thanks_order',
                 query: {
                   orderId: paygateData.order_id,
-                  paymentStatus: thirdStatusResponse.data.message.type,
-                  paymentMessage: thirdStatusResponse.data.message.message,
-                  paymentTitle: thirdStatusResponse.data.message.title
+                  paymentStatus: secondStatusResponse.data.message.type,
+                  paymentMessage: secondStatusResponse.data.message.message,
+                  paymentTitle: secondStatusResponse.data.message.title
                 }
               });
               return;
             }
-          } else {
-            // Si le statut a changé à 50s, on redirige avec le statut actuel
-            showPendingModal.value = false;
-            sessionStorage.removeItem('orderData');
-            
-            router.push({
-              path: '/thanks_order',
-              query: {
-                orderId: paygateData.order_id,
-                paymentStatus: secondStatusResponse.data.message.type,
-                paymentMessage: secondStatusResponse.data.message.message,
-                paymentTitle: secondStatusResponse.data.message.title
-              }
-            });
-            return;
-          }
         }
         
         // Si le statut est "warning" (annulé) ou "error" (échoué), on redirige immédiatement

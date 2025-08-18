@@ -111,10 +111,10 @@
                     <h2 class="text-xl font-semibold text-gray-700 border-b pb-4 mb-6">3. Méthode de paiement</h2>
                     <div class="space-y-4">
                         <div class="flex flex-col md:flex-row gap-4">
-                            <label class="flex items-center p-4 border rounded-lg has-[:checked]:bg-blue-50 has-[:checked]:border-blue-400 transition cursor-pointer flex-1">
+                           <!--  <label class="flex items-center p-4 border rounded-lg has-[:checked]:bg-blue-50 has-[:checked]:border-blue-400 transition cursor-pointer flex-1">
                                 <input type="radio" value="livraison" v-model="form.typePaiement" name="typePaiement" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
                                 <span class="ml-3 font-medium text-gray-700">Paiement à la livraison</span>
-                            </label>
+                            </label> -->
                             <label class="flex items-center p-4 border rounded-lg has-[:checked]:bg-blue-50 has-[:checked]:border-blue-400 transition cursor-pointer flex-1">
                                 <input type="radio" value="en_ligne" v-model="form.typePaiement" name="typePaiement" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
                                 <span class="ml-3 font-medium text-gray-700">Paiement en ligne</span>
@@ -362,7 +362,7 @@ watch(cartItems, () => {
       showError('Votre panier est vide. Vous allez être redirigé vers la page d\'accueil.');
       setTimeout(() => {
         router.push('/');
-      }, 2000);
+      }, 500);
     }
   }
 }, { deep: true });
@@ -412,14 +412,14 @@ const numeroPaiementError = computed(() => {
     const prefix = numero.substring(0, 2);
     
     if (methode === 'FLOOZ') {
-        const validPrefixes = ['99', '98', '97', '96'];
+        const validPrefixes = ['99', '98', '97', '96','79'];
         if (!validPrefixes.includes(prefix)) {
             return 'Pour Moov, le numéro doit commencer par 99, 98, 97, ou 96.';
         }
     }
     
     if (methode === 'TMONEY') {
-        const validPrefixes = ['90', '91', '92', '93', '70', '71'];
+        const validPrefixes = ['90', '91', '92', '93', '70', '71', '72'];
         if (!validPrefixes.includes(prefix)) {
             return 'Pour MIXX, le numéro doit commencer par 90, 91, 92, 93, 70, ou 71.';
         }

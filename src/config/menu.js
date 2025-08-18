@@ -11,7 +11,6 @@ export const fetchActiveCategories = async () => {
         id: category.id,
         name: category.nom,
         href: `/produits/category/${category.id}/${encodeURIComponent(category.nom)}`,
-        icon: category.icone || 'fa-solid fa-tag',
         description: category.description
       }));
     }

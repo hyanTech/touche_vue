@@ -28,8 +28,8 @@
             </button>
           </div>
   
-          <!-- Grille des produits - NOUVEAU DESIGN RESPONSIVE -->
-          <div v-else-if="paginatedProducts.length > 0" class="space-y-6 md:space-y-0 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-8">
+                     <!-- Grille des produits - NOUVEAU DESIGN RESPONSIVE -->
+           <div v-else-if="paginatedProducts.length > 0" class="space-y-6 md:space-y-0 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-8">
             <!-- Boucle sur les produits de la page actuelle -->
             <div v-for="product in paginatedProducts" :key="product.id" 
                  class="product-card bg-white rounded-xl shadow-md overflow-hidden flex flex-row md:flex-col cursor-pointer" 
@@ -37,10 +37,18 @@
               
               <!-- Conteneur de l'image (responsive) - CORRIGÉ -->
               <div class="relative w-1/3 md:w-full h-auto flex-shrink-0 md:h-64 bg-gray-100 flex items-center justify-center">
-                                 <img :src="getImageUrl(product.imageUrl)" 
-                      :alt="'Image de ' + product.name" 
-                      class="w-full h-full object-contain" 
-                      @error="handleImageError">
+                <!-- Loader pendant le chargement de l'image -->
+                <div v-if="!product.imageLoaded" class="absolute inset-0 flex items-center justify-center">
+                  <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+                
+                <!-- Image du produit -->
+                <img :src="getImageUrl(product.image_cover || product.imageUrl)" 
+                     :alt="'Image de ' + product.name" 
+                     class="w-full h-full object-contain cursor-pointer transition-opacity duration-300"
+                     :class="{ 'opacity-0': !product.imageLoaded, 'opacity-100': product.imageLoaded }"
+                     @load="onImageLoad(product)"
+                     @error="onImageError(product)">
                 
                 <!-- Badge de promotion -->
                 <div v-if="product.originalPrice && product.originalPrice > product.price" class="promotion-badge absolute top-3 left-3 bg-error-color text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-lg">
@@ -61,17 +69,22 @@
   
                   <!-- Boutons d'action -->
                   <div class="flex items-center space-x-3">
-                                         <button 
-                       @click.stop="handleAddToCart(product)" 
-                       :disabled="!product.stock || product.stock <= 0"
-                       :class="[
-                         'w-full text-center px-3 py-2 rounded-lg transition-colors text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary add-to-cart-btn',
-                         product.stock && product.stock > 0 
-                           ? 'btn-available' 
-                           : 'btn-disabled'
-                       ]"
-                     >
-                      {{ product.stock && product.stock > 0 ? 'Ajouter' : 'Rupture de stock' }}
+                    <!-- Bouton Ajouter (visible sur desktop, icône sur mobile) -->
+                    <button 
+                      @click.stop="handleAddToCart(product)" 
+                      :disabled="!product.stock || product.stock <= 0"
+                      :class="[
+                        'flex items-center justify-center px-3 py-2 rounded-lg transition-colors text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary add-to-cart-btn',
+                        product.stock && product.stock > 0 
+                          ? 'btn-available' 
+                          : 'btn-disabled'
+                      ]"
+                    >
+                                             <!-- Icône panier sur mobile, texte sur desktop -->
+                       <i v-if="product.stock && product.stock > 0" class="fas fa-shopping-cart text-lg md:hidden"></i>
+                       <span class="hidden md:inline">{{ product.stock && product.stock > 0 ? 'Ajouter' : 'Rupture de stock' }}</span>
+                       <!-- Icône de rupture de stock sur mobile -->
+                       <i v-if="!product.stock || product.stock <= 0" class="fas fa-times-circle text-lg md:hidden"></i>
                     </button>
                     <button 
                       @click.stop="viewProductDetails(product)" 
@@ -96,16 +109,48 @@
           </div>
   
           <!-- Contrôles de Pagination -->
-          <div v-if="totalPages > 1" class="flex justify-center items-center mt-12 space-x-1 sm:space-x-2">
-            <button @click="prevPage" :disabled="currentPage === 1" class="px-3 sm:px-4 py-2 font-semibold bg-white text-text-primary rounded-md shadow-sm hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-              Précédent
-            </button>
-            <button v-for="pageNumber in totalPages" :key="pageNumber" @click="goToPage(pageNumber)" :class="['px-3 sm:px-4 py-2 rounded-md transition-colors', currentPage === pageNumber ? 'bg-primary text-white shadow-md' : 'bg-white text-text-secondary hover:bg-accent']">
-              {{ pageNumber }}
-            </button>
-            <button @click="nextPage" :disabled="currentPage === totalPages" class="px-3 sm:px-4 py-2 font-semibold bg-white text-text-primary rounded-md shadow-sm hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-              Suivant
-            </button>
+          <div v-if="totalPages > 1" class="mt-12" id="pagination-section">
+            <!-- Indicateur de page actuelle -->
+            <div class="text-center mb-4 text-text-secondary text-sm">
+              Page {{ currentPage }} sur {{ totalPages }} 
+              
+            </div>
+            
+            <!-- Boutons de pagination -->
+            <div class="flex justify-center items-center space-x-1 sm:space-x-2">
+                           <!-- Bouton Précédent -->
+             <button @click="prevPage" :disabled="currentPage === 1" class="px-3 sm:px-4 py-2 font-semibold bg-white text-text-primary rounded-md shadow-sm hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors pagination-button">
+               <span class="hidden sm:inline">Précédent</span>
+               <span class="sm:hidden">‹</span>
+             </button>
+              
+                           <!-- Première page -->
+             <button v-if="showFirstPage" @click="goToPage(1)" :class="['px-3 sm:px-4 py-2 rounded-md transition-colors pagination-button', currentPage === 1 ? 'bg-primary text-white shadow-md' : 'bg-white text-text-secondary hover:bg-accent']">
+               1
+             </button>
+              
+              <!-- Ellipsis après la première page -->
+              <span v-if="showFirstEllipsis" class="px-2 py-2 text-text-secondary">...</span>
+              
+                           <!-- Pages du milieu (limitées) -->
+             <button v-for="pageNumber in visiblePageNumbers" :key="pageNumber" @click="goToPage(pageNumber)" :class="['px-3 sm:px-4 py-2 rounded-md transition-colors pagination-button', currentPage === pageNumber ? 'bg-primary text-white shadow-md' : 'bg-white text-text-secondary hover:bg-accent']">
+               {{ pageNumber }}
+             </button>
+              
+              <!-- Ellipsis avant la dernière page -->
+              <span v-if="showLastEllipsis" class="px-2 py-2 text-text-secondary">...</span>
+              
+                           <!-- Dernière page -->
+             <button v-if="showLastPage" @click="goToPage(totalPages)" :class="['px-3 sm:px-4 py-2 rounded-md transition-colors pagination-button', currentPage === totalPages ? 'bg-primary text-white shadow-md' : 'bg-white text-text-secondary hover:bg-accent']">
+               {{ totalPages }}
+             </button>
+              
+                           <!-- Bouton Suivant -->
+             <button @click="nextPage" :disabled="currentPage === totalPages" class="px-3 sm:px-4 py-2 font-semibold bg-white text-text-primary rounded-md shadow-sm hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors pagination-button">
+               <span class="hidden sm:inline">Suivant</span>
+               <span class="sm:hidden">›</span>
+             </button>
+            </div>
           </div>
         </div>
       </div>
@@ -122,7 +167,7 @@
   </template>
   
   <script setup>
-  import { ref, computed, onMounted } from 'vue';
+  import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import DefaultLayout from '../layouts/DefaultLayout.vue';
 import AddToCartModal from '../components/AddToCartModal.vue';
@@ -148,6 +193,55 @@ import { getImageUrl, handleImageError } from '../config/utils.js';
   
   // --- Propriétés Calculées ---
   const totalPages = computed(() => Math.ceil(products.value.length / itemsPerPage.value));
+  
+  // Pagination intelligente - limite le nombre de boutons affichés
+  const visiblePageNumbers = computed(() => {
+    const total = totalPages.value;
+    const current = currentPage.value;
+    const maxVisible = window.innerWidth < 768 ? 3 : 5; // 3 sur mobile, 5 sur desktop
+    
+    if (total <= maxVisible) {
+      // Si peu de pages, afficher toutes
+      return Array.from({ length: total }, (_, i) => i + 1);
+    }
+    
+    let start = Math.max(2, current - Math.floor(maxVisible / 2));
+    let end = Math.min(total - 1, start + maxVisible - 1);
+    
+    // Ajuster si on est trop près de la fin
+    if (end === total - 1) {
+      start = Math.max(2, end - maxVisible + 1);
+    }
+    
+    // Ajuster si on est trop près du début
+    if (start === 2) {
+      end = Math.min(total - 1, start + maxVisible - 1);
+    }
+    
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  });
+  
+  // Conditions pour afficher les ellipsis et pages limites
+  const showFirstPage = computed(() => {
+    const firstVisible = visiblePageNumbers.value[0];
+    return firstVisible > 2;
+  });
+  
+  const showLastPage = computed(() => {
+    const lastVisible = visiblePageNumbers.value[visiblePageNumbers.value.length - 1];
+    return lastVisible < totalPages.value - 1;
+  });
+  
+  const showFirstEllipsis = computed(() => {
+    const firstVisible = visiblePageNumbers.value[0];
+    return firstVisible > 2;
+  });
+  
+  const showLastEllipsis = computed(() => {
+    const lastVisible = visiblePageNumbers.value[visiblePageNumbers.value.length - 1];
+    return lastVisible < totalPages.value - 1;
+  });
+  
   const paginatedProducts = computed(() => {
       const startIndex = (currentPage.value - 1) * itemsPerPage.value;
       return products.value.slice(startIndex, startIndex + itemsPerPage.value);
@@ -155,29 +249,56 @@ import { getImageUrl, handleImageError } from '../config/utils.js';
   
   // --- Méthodes ---
   
-  // Fait défiler la fenêtre vers le haut de la page
-  function scrollToTop() {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Ajuste le nombre d'éléments par page selon la taille d'écran
+  function adjustItemsPerPage() {
+    if (window.innerWidth < 640) { // Mobile
+      itemsPerPage.value = 4;
+    } else if (window.innerWidth < 1024) { // Tablet
+      itemsPerPage.value = 6;
+    } else { // Desktop
+      itemsPerPage.value = 9;
+    }
+    
+    // Réinitialiser à la première page si nécessaire
+    if (currentPage.value > totalPages.value && totalPages.value > 0) {
+      currentPage.value = 1;
+    }
   }
   
-  function nextPage() {
-      if (currentPage.value < totalPages.value) {
-          currentPage.value++;
-          scrollToTop();
-      }
-  }
+     // Simule un chargement et remonte discrètement en haut
+   function scrollToTopWithLoading() {
+       // Remonter immédiatement en haut de page (discrètement)
+       window.scrollTo({ top: 0, behavior: 'instant' });
+       
+       // Afficher l'état de chargement
+       isLoading.value = true;
+       
+       // Simuler un chargement de 2 secondes
+       setTimeout(() => {
+           isLoading.value = false;
+       }, 500);
+   }
   
-  function prevPage() {
-      if (currentPage.value > 1) {
-          currentPage.value--;
-          scrollToTop();
-      }
-  }
-  
-  function goToPage(pageNumber) {
-      currentPage.value = pageNumber;
-      scrollToTop();
-  }
+     function nextPage() {
+       if (currentPage.value < totalPages.value) {
+           currentPage.value++;
+           scrollToTopWithLoading();
+       }
+   }
+   
+   function prevPage() {
+       if (currentPage.value > 1) {
+           currentPage.value--;
+           scrollToTopWithLoading();
+       }
+   }
+   
+   function goToPage(pageNumber) {
+       if (pageNumber !== currentPage.value) {
+           currentPage.value = pageNumber;
+           scrollToTopWithLoading();
+       }
+   }
   
   // Fonction pour récupérer les produits depuis l'API
   async function fetchProducts() {
@@ -216,7 +337,12 @@ import { getImageUrl, handleImageError } from '../config/utils.js';
                        stock: product.stock,
                        category: product.categorie,
                        tailles: tailles,
-                       couleurs: couleurs
+                       couleurs: couleurs,
+                       imageLoaded: false, // Ajouter l'état de chargement de l'image
+                       // Ajouter les champs originaux pour le panier
+                       prix: product.prix,
+                       prix_promotion: product.prix_promotion,
+                       image_cover: product.image_cover
                    };
                });
           } else {
@@ -275,7 +401,7 @@ import { getImageUrl, handleImageError } from '../config/utils.js';
                nom: product.name, // Utiliser 'nom' pour correspondre au panier
                prix: product.price,
                prix_promotion: product.originalPrice ? product.price : null, // Seulement si il y a un prix original barré
-               image_cover: product.imageUrl, // URL brute pour le panier
+               image_cover: product.image_cover, // Utiliser le champ original image_cover
                stock: product.stock || 999,
                description: product.description
            };
@@ -332,7 +458,24 @@ import { getImageUrl, handleImageError } from '../config/utils.js';
   // --- Hook de Cycle de Vie ---
   onMounted(() => {
       fetchProducts();
+      adjustItemsPerPage(); // Ajuster le nombre d'éléments par page au chargement
+      window.addEventListener('resize', adjustItemsPerPage); // Redimensionner lors du redimensionnement de la fenêtre
   });
+
+  onUnmounted(() => {
+      window.removeEventListener('resize', adjustItemsPerPage);
+  });
+  
+  // Fonction pour gérer le chargement de l'image
+  function onImageLoad(product) {
+      product.imageLoaded = true;
+  }
+  
+  // Fonction pour gérer les erreurs de chargement d'image
+  function onImageError(product) {
+      product.imageLoaded = true; // Masquer le loader
+      console.warn('Erreur de chargement de l\'image pour le produit:', product.id);
+  }
   </script>
   
   <style scoped>
@@ -406,5 +549,61 @@ import { getImageUrl, handleImageError } from '../config/utils.js';
        border: 2px solid #d1d5db;
        color: #6b7280;
        cursor: not-allowed;
+   }
+   
+   /* Styles pour la pagination mobile */
+   @media (max-width: 640px) {
+       .pagination-container {
+           flex-wrap: wrap;
+           gap: 0.5rem;
+       }
+       
+       .pagination-container button {
+           min-width: 2.5rem;
+           height: 2.5rem;
+           font-size: 0.875rem;
+       }
+   }
+   
+   /* Animation pour les ellipsis */
+   .ellipsis {
+       animation: fadeInOut 2s ease-in-out infinite;
+   }
+   
+   @keyframes fadeInOut {
+       0%, 100% { opacity: 0.6; }
+       50% { opacity: 1; }
+   }
+   
+   /* Styles pour le loader d'image */
+   .image-loader {
+       background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+       background-size: 200% 100%;
+       animation: shimmer 1.5s infinite;
+   }
+   
+   @keyframes shimmer {
+       0% { background-position: -200% 0; }
+       100% { background-position: 200% 0; }
+   }
+   
+   /* Transition douce pour l'apparition des images */
+   .image-transition {
+       transition: opacity 0.3s ease-in-out;
+   }
+   
+   /* Style pour l'image par défaut en cas d'erreur */
+   .default-image {
+       background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+   }
+   
+   /* Transition douce pour les boutons de pagination */
+   .pagination-button {
+       transition: all 0.3s ease;
+   }
+   
+   .pagination-button:hover {
+       transform: translateY(-2px);
+       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
    }
   </style>

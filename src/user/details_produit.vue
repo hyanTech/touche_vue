@@ -549,9 +549,10 @@ const goToInfoPage = () => {
   const productData = {
     ...product.value,
     selectedColor: selectedColor,
-    selectedSize: selectedSize
+    selectedSize: selectedSize,
+    quantity: selectedQuantity, // Ajouter la quantité sélectionnée
+    qte: selectedQuantity // Ajouter aussi qte pour compatibilité
   };
-  
   
   // Stocker temporairement les données dans localStorage
   localStorage.setItem('directPurchaseData', JSON.stringify(productData));

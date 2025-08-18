@@ -2,9 +2,9 @@
 
 :root {
   /* Couleurs principales */
-  --primary-color: #393E46;      /* Rose principal */
-  --secondary-color: #EEEEEE;    /* Beige/rose clair */
-  --accent-color: #EEEEEE;       /* Blanc rosé */
+  --primary-color: #F564A9;      /* Rose principal */
+  --secondary-color: #FFC1DA;    /* Beige/rose clair */
+  --accent-color: #FFC1DA;       /* Blanc rosé */
   
   /* Couleurs de texte */
   --text-primary: #FFDBDB;       /* Gris foncé pour le texte principal */
@@ -18,16 +18,16 @@
   
   /* Couleurs de fond */
   --bg-primary: #FFFFFF;         /* Blanc */
-  --bg-secondary: #393E46;       /* Gris très clair */
-  --bg-accent: #393E46;          /* Blanc rosé */
+  --bg-secondary: #F564A9;       /* Gris très clair */
+  --bg-accent: #F564A9;          /* Blanc rosé */
   
   /* Couleurs d'interaction */
-  --hover-color: #393E46;        /* Rouge foncé pour les hovers */
-  --focus-color: #EEEEEE;        /* Rose principal pour les focus */
+  --hover-color: #F564A9;        /* Rouge foncé pour les hovers */
+  --focus-color: #FFC1DA;        /* Rose principal pour les focus */
   
   /* Couleurs de bordure */
-  --border-color: #EEEEEE;       /* Gris clair pour les bordures */
-  --border-focus: #EEEEEE;       /* Rose pour les bordures focus */
+  --border-color: #FFC1DA;       /* Gris clair pour les bordures */
+  --border-focus: #FFC1DA;       /* Rose pour les bordures focus */
 }
 
 /* Classes utilitaires pour les couleurs - Plus spécifiques */

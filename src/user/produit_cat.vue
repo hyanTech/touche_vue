@@ -40,12 +40,12 @@
                                  class="w-full h-44 sm:h-48 md:h-52 object-cover transition-transform duration-300 hover:scale-105" 
                                  @error="handleImageError">
                             <!-- Statut du stock -->
-                            <div class="absolute top-2 right-2">
+                            <!-- <div class="absolute top-2 right-2">
                                 <span :class="getStockStatusClass(product.stock)"
                                       class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium">
                                     {{ getStockStatusText(product.stock) }}
                                 </span>
-                            </div>
+                            </div> -->
                         </div>
                         <div class="p-3 sm:p-4 flex flex-col flex-grow">
                             <h2 class="text-sm sm:text-base font-semibold mb-2 text-text-primary line-clamp-2">{{ product.nom }}</h2>

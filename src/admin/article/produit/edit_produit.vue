@@ -284,22 +284,60 @@
                                     multiple
                                     @change="handleImageSelect($event, 'gallery')"
                                 />
+                                <p v-if="errors.images" class="text-sm text-red-600 mt-1">{{ errors.images }}</p>
                                 <!-- Aperçu des images de galerie -->
-                                <div v-if="product.images && product.images.length > 0" class="mt-2 grid grid-cols-2 gap-2">
-                                    <div v-for="(image, index) in product.images" :key="index" class="relative">
-                                        <img 
-                                            :src="getImageUrl(image.filename || image)" 
-                                            class="w-full h-20 object-cover rounded-lg"
-                                            @error="handleImageError"
-                                            loading="lazy"
-                                        />
-                                        <button 
-                                            @click="removeGalleryImage(index)"
-                                            class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
-                                            title="Supprimer l'image"
-                                        >
-                                            ×
-                                        </button>
+                                <div v-if="(product.existing_images && product.existing_images.length > 0) || (product.new_images && product.new_images.length > 0)" class="mt-2 space-y-4">
+                                    
+                                    <!-- Images existantes -->
+                                    <div v-if="product.existing_images && product.existing_images.length > 0">
+                                        <h4 class="text-sm font-medium text-gray-700 mb-2">Images existantes</h4>
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <div v-for="(image, index) in product.existing_images" :key="`existing-${index}`" class="relative group">
+                                                <img 
+                                                    :src="getImageUrl(image.filename || image)" 
+                                                    class="w-full h-20 object-cover rounded-lg border-2 border-blue-200"
+                                                    @error="handleImageError"
+                                                    loading="lazy"
+                                                />
+                                                <button 
+                                                    type="button"
+                                                    @click="confirmDeleteExistingImage(index, $event)"
+                                                    class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors duration-200 opacity-0 group-hover:opacity-100"
+                                                    title="Supprimer définitivement de la base de données"
+                                                >
+                                                    ×
+                                                </button>
+                                                <div class="absolute bottom-1 left-1 bg-blue-500 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                                    Existant
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Nouvelles images -->
+                                    <div v-if="product.new_images && product.new_images.length > 0">
+                                        <h4 class="text-sm font-medium text-gray-700 mb-2">Nouvelles images</h4>
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <div v-for="(image, index) in product.new_images" :key="`new-${index}`" class="relative group">
+                                                <img 
+                                                    :src="getImagePreview(image)" 
+                                                    class="w-full h-20 object-cover rounded-lg border-2 border-green-200"
+                                                    @error="handleImageError"
+                                                    loading="lazy"
+                                                />
+                                                <button 
+                                                    type="button"
+                                                    @click="removeNewGalleryImage(index, $event)"
+                                                    class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors duration-200 opacity-0 group-hover:opacity-100"
+                                                    title="Supprimer de la sélection"
+                                                >
+                                                    ×
+                                                </button>
+                                                <div class="absolute bottom-1 left-1 bg-green-500 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                                    Nouveau
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -331,7 +369,7 @@
 </template>
 
 <script>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
 import { productService, categoryService } from '../../../config/api.js'
@@ -369,7 +407,9 @@ export default {
             couleurs: [],
             etat: true,
             image_cover: null,
-            images: []
+            // Séparer les images existantes des nouvelles images
+            existing_images: [], // Images déjà en base de données
+            new_images: [] // Nouvelles images sélectionnées
         })
         
        
@@ -383,11 +423,20 @@ export default {
             if (isNaN(numValue)) {
                 return null
             }
-            // Pour le prix promotionnel, retourner null si c'est 0 (pour permettre la suppression)
-            if (numValue === 0) {
-                return null
-            }
             return numValue
+        }
+        
+        // Fonction pour vérifier si un fichier est en double
+        const isDuplicateFile = (newFile, existingFiles) => {
+            return existingFiles.some(existingFile => {
+                if (existingFile instanceof File && newFile instanceof File) {
+                    // Comparaison pour les fichiers File
+                    return existingFile.name === newFile.name && 
+                           existingFile.size === newFile.size && 
+                           existingFile.lastModified === newFile.lastModified
+                }
+                return false
+            })
         }
         
         // Erreurs de validation
@@ -401,7 +450,8 @@ export default {
             tailles: '',
             couleurs: '',
             etat: '',
-            image_cover: ''
+            image_cover: '',
+            images: '' // Nouvelle erreur pour les doublons d'images
         })
         
         // Options disponibles
@@ -477,17 +527,21 @@ export default {
                 
                 // Gérer les images de galerie
                 if (productData.images && Array.isArray(productData.images)) {
-                    product.images = productData.images
+                    product.existing_images = productData.images
                 } else if (typeof productData.images === 'string') {
                     try {
-                        product.images = JSON.parse(productData.images)
+                        const parsedImages = JSON.parse(productData.images)
+                        product.existing_images = Array.isArray(parsedImages) ? parsedImages : []
                     } catch (parseError) {
                         console.warn('Erreur lors du parsing JSON pour les images:', parseError)
-                        product.images = []
+                        product.existing_images = []
                     }
                 } else {
-                    product.images = []
+                    product.existing_images = []
                 }
+                
+                // Initialiser le tableau des nouvelles images
+                product.new_images = []
                 
                
                 
@@ -564,6 +618,22 @@ export default {
                 isValid = false
             }
             
+            // Validation des images de galerie (vérifier qu'il n'y a pas de doublons)
+            if (product.new_images && product.new_images.length > 0) {
+                const uniqueFiles = new Set()
+                for (const file of product.new_images) {
+                    if (file instanceof File) {
+                        const fileKey = `${file.name}-${file.size}-${file.lastModified}`
+                        if (uniqueFiles.has(fileKey)) {
+                            errors.images = 'Des images en double ont été détectées dans la galerie'
+                            isValid = false
+                            break
+                        }
+                        uniqueFiles.add(fileKey)
+                    }
+                }
+            }
+            
             return isValid
         }
         
@@ -575,10 +645,18 @@ export default {
                     product.image_cover = files[0]
                 }
             } else if (type === 'gallery') {
+                // Empêcher les doublons sur les nouvelles images
                 for (let i = 0; i < files.length; i++) {
-                    product.images.push(files[i])
+                    const file = files[i]
+                    if (!isDuplicateFile(file, product.new_images)) {
+                        product.new_images.push(file)
+                    } else {
+                       
+                    }
                 }
             }
+            // Réinitialiser l'input pour permettre la sélection du même fichier
+            event.target.value = ''
         }
         
         const handleImageDrop = (event, type) => {
@@ -588,8 +666,14 @@ export default {
                     product.image_cover = files[0]
                 }
             } else if (type === 'gallery') {
+                // Empêcher les doublons sur les nouvelles images
                 for (let i = 0; i < files.length; i++) {
-                    product.images.push(files[i])
+                    const file = files[i]
+                    if (!isDuplicateFile(file, product.new_images)) {
+                        product.new_images.push(file)
+                    } else {
+                        
+                    }
                 }
             }
         }
@@ -604,17 +688,25 @@ export default {
             if (event) {
                 event.preventDefault()
                 event.stopPropagation()
+                event.stopImmediatePropagation()
             }
             
-            if (confirm('Êtes-vous sûr de vouloir supprimer cette image ? Cette action est irréversible.')) {
-                console.log('Confirmation de suppression d\'image', index)
+            const imageToDelete = product.existing_images[index]
+            if (!imageToDelete) {
+                showError('Image non trouvée')
+                return
+            }
+            
+            
+            if (confirm(`Êtes-vous sûr de vouloir supprimer cette image ? Cette action est irréversible.`)) {
+                
                 removeExistingGalleryImage(index)
             }
         }
         
         const removeExistingGalleryImage = async (index) => {
             if (isDeletingImage.value) {
-                console.log('Suppression d\'image déjà en cours, ignoré')
+                
                 return
             }
             
@@ -622,31 +714,44 @@ export default {
             
             try {
                 const productId = route.params.id
-                console.log('Tentative de suppression de l\'image', index, 'du produit', productId)
+                const imageToDelete = product.existing_images[index]
                 
-                // Appel à l'API pour supprimer l'image
+                if (!imageToDelete) {
+                    showError('Image non trouvée')
+                    return
+                }
+                
+                
+                
+                // Appel à l'API pour supprimer l'image (UNIQUEMENT DELETE)
                 const response = await productService.deleteProductImage(productId, index)
-                console.log('Réponse de suppression d\'image:', response)
+               
                 
                 // Supprimer l'image de la liste locale
-                if (product.images_urls && product.images_urls[index]) {
-                    product.images_urls.splice(index, 1)
-                    console.log('Image supprimée de la liste locale')
+                if (product.existing_images && product.existing_images[index]) {
+                    product.existing_images.splice(index, 1)
+                    
                 }
                 
                 // Notification de succès
                 success('Image supprimée avec succès !', 'Suppression image')
                 
             } catch (error) {
-                console.error('Erreur lors de la suppression de l\'image:', error)
+                console.error('=== ERREUR SUPPRESSION IMAGE ===')
+                console.error('Erreur complète:', error)
                 console.error('Status:', error.response?.status)
                 console.error('Data:', error.response?.data)
+                console.error('Config:', error.config)
+                console.error('Méthode HTTP utilisée:', error.config?.method)
+                console.error('URL appelée:', error.config?.url)
                 
                 // Gestion des erreurs spécifiques
                 if (error.response?.status === 404) {
                     showError('Produit non trouvé. Veuillez rafraîchir la page.')
                 } else if (error.response?.status === 401) {
                     showError('Session expirée. Veuillez vous reconnecter.')
+                } else if (error.response?.status === 500) {
+                    showError('Erreur serveur lors de la suppression. Vérifiez les logs.')
                 } else if (error.response?.data?.message) {
                     showError(error.response.data.message)
                 } else {
@@ -659,21 +764,32 @@ export default {
             }
         }
         
-        const removeNewGalleryImage = (index) => {
-            // Supprimer une nouvelle image des fichiers
-            if (product.images && product.images[index]) {
-                product.images.splice(index, 1)
+        const removeNewGalleryImage = (index, event) => {
+            // Empêcher la propagation d'événements qui pourraient déclencher le formulaire
+            if (event) {
+                event.preventDefault()
+                event.stopPropagation()
             }
-        }
-        
-        const removeGalleryImage = (index) => {
-            if (product.images && product.images[index]) {
-                product.images.splice(index, 1)
+
+            // Supprimer une nouvelle image des fichiers
+            if (product.new_images && product.new_images[index]) {
+                const imageToRemove = product.new_images[index]
+                // Nettoyer l'URL de l'objet si c'est un File
+                if (imageToRemove instanceof File) {
+                    // Libérer la mémoire de l'URL créée
+                    const imageUrl = getImagePreview(imageToRemove)
+                    if (imageUrl && imageUrl.startsWith('blob:')) {
+                        URL.revokeObjectURL(imageUrl)
+                    }
+                }
+                product.new_images.splice(index, 1)
+               
+                
             }
         }
         
         const getImagePreview = (file) => {
-            console.log('getImagePreview appelé avec:', file)
+            
             
             // Si c'est un fichier File (nouvelle image)
             if (file instanceof File) {
@@ -682,6 +798,33 @@ export default {
             
             // Pour les autres types, utiliser getImageUrl
             return getImageUrl(file)
+        }
+        
+        // Fonction pour nettoyer les doublons d'images
+        const cleanDuplicateImages = () => {
+            if (!product.new_images || product.new_images.length === 0) {
+                return
+            }
+            
+            const uniqueFiles = []
+            const seenFiles = new Set()
+            
+            for (const file of product.new_images) {
+                if (file instanceof File) {
+                    const fileKey = `${file.name}-${file.size}-${file.lastModified}`
+                    if (!seenFiles.has(fileKey)) {
+                        seenFiles.add(fileKey)
+                        uniqueFiles.push(file)
+                    } else {
+                        //console.log('Doublon supprimé:', file.name)
+                    }
+                } else {
+                    // Garder les objets non-File
+                    uniqueFiles.push(file)
+                }
+            }
+            
+            product.new_images = uniqueFiles
         }
         
         // Soumission du formulaire
@@ -705,25 +848,25 @@ export default {
                     tailles: product.tailles,
                     couleurs: product.couleurs,
                     etat: product.etat,
-                    image_cover: product.image_cover,
-                    images: product.images,
-                    // Inclure les URLs des images existantes (juste les filenames)
-                    existing_images: product.images_urls
+                    // N'envoyer l'image de couverture que si c'est un File
+                    image_cover: (product.image_cover instanceof File) ? product.image_cover : null,
+                    // N'envoyer que les nouveaux fichiers pour upload
+                    images: product.new_images
                 }
                 
-                // Gérer le prix de promotion (inclure même si 0 ou null pour permettre la suppression)
+                // Gérer le prix de promotion (inclure même si 0 pour permettre la suppression)
                 const prixPromotion = cleanNumericValue(product.prix_promotion)
-                // Si le prix promotionnel est 0, vide ou null, l'envoyer explicitement comme null
-                if (prixPromotion === null || prixPromotion === 0) {
-                    productData.prix_promotion = null
-                } else {
+                if (prixPromotion !== null) {
                     productData.prix_promotion = prixPromotion
                 }
                 
+                // Nettoyer les doublons d'images avant l'envoi
+                cleanDuplicateImages()
+                //console.log('productData', productData)
                 // Appel à l'API
                 const response = await productService.updateProduct(productId, productData)
                 
-                console.log('Produit mis à jour avec succès:', response.data)
+                
                 
                 // Notification de succès
                 success('Produit mis à jour avec succès !', 'Modification produit')
@@ -762,6 +905,26 @@ export default {
                 loadProduct()
             ])
         })
+
+        onUnmounted(() => {
+            // Libérer toutes les URLs d'objets créées pour les images
+            if (product.image_cover instanceof File) {
+                const imageUrl = getImagePreview(product.image_cover)
+                if (imageUrl && imageUrl.startsWith('blob:')) {
+                    URL.revokeObjectURL(imageUrl)
+                }
+            }
+            
+            // Libérer les URLs des nouvelles images
+            product.new_images.forEach(file => {
+                if (file instanceof File) {
+                    const imageUrl = getImagePreview(file)
+                    if (imageUrl && imageUrl.startsWith('blob:')) {
+                        URL.revokeObjectURL(imageUrl)
+                    }
+                }
+            })
+        })
         
         return {
             product,
@@ -776,10 +939,13 @@ export default {
             handleImageSelect,
             handleImageDrop,
             removeCoverImage,
-            removeGalleryImage,
+            removeNewGalleryImage,
+            confirmDeleteExistingImage,
+            removeExistingGalleryImage,
             getImagePreview,
             getImageUrl,
             handleImageError,
+            cleanDuplicateImages,
             submitForm,
             goBack
         }

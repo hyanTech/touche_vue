@@ -21,28 +21,37 @@
                 </div>
             </div>
 
-            <!-- Grille des catégories avec icônes circulaires -->
-            <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-y-8 sm:gap-x-6">
+            <!-- Grille des catégories avec design moderne -->
+            <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
                 <!-- Boucle sur la liste des catégories -->
                 <div v-for="category in categories" :key="category.id" 
-                     class="group cursor-pointer text-center">
+                     class="group cursor-pointer">
                     
-                    <!-- Le cercle contenant l'icône -->
+                    <!-- Carte de catégorie -->
                     <div @click="navigateToCategory(category)" 
-                         class="mx-auto flex items-center justify-center w-32 h-32 bg-white rounded-full shadow-lg transform group-hover:shadow-primary/20 group-hover:scale-105 transition-all duration-300 ease-in-out">
-                        <i :class="[category.icon, 'text-4xl text-primary']"></i>
-                    </div>
-
-                    <!-- Nom de la catégorie -->
-                    <div class="p-4">
-                        <h2 @click="navigateToCategory(category)" 
-                            class="text-base sm:text-lg font-semibold text-text-primary hover:text-primary transition-colors cursor-pointer">
-                            {{ category.name }}
-                        </h2>
+                         class="bg-white rounded-xl shadow-lg hover:shadow-xl transform group-hover:scale-105 transition-all duration-300 ease-in-out p-6 h-full flex flex-col">
+                        
+                        <!-- En-tête de la catégorie -->
+                        <div class="text-center mb-4">
+                            <h2 class="text-xl font-bold text-text-primary group-hover:text-primary transition-colors">
+                                {{ category.name }}
+                            </h2>
+                        </div>
+                        
                         <!-- Description de la catégorie -->
-                        <p v-if="category.description" class="text-sm text-text-secondary mt-2 line-clamp-2">
-                            {{ category.description }}
-                        </p>
+                        <div class="flex-grow" v-if="category.description">
+                            <p class="text-sm text-text-secondary text-center leading-relaxed line-clamp-3">
+                                {{ category.description }}
+                            </p>
+                        </div>
+                        
+                        <!-- Indicateur d'action -->
+                        <div class="mt-4 text-center">
+                            <span class="inline-flex items-center text-primary text-sm font-medium group-hover:text-primary-dark transition-colors">
+                                Voir les produits
+                                <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -107,6 +116,13 @@ onMounted(() => {
 .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }

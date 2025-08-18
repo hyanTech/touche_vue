@@ -3,12 +3,12 @@
     <!-- Section Héros -->
     <section
       v-if="!pubLoading && pubData"
-      class="bg-primary rounded-lg shadow-lg text-white p-8 md:p-12 mb-12 flex flex-col md:flex-row items-center">
+      class="bg-[#FAF7F3] rounded-lg shadow-lg text-[#E195AB] p-8 md:p-12 mb-12 flex flex-col md:flex-row items-center">
       <div class="md:w-1/2 text-center md:text-left mb-8 md:mb-0">
         <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 leading-tight">{{ pubData.titre_pub1 || 'Collection Été 2025' }}</h1>
-        <p class="text-lg text-white/80 mb-6">{{ pubData.sous_titre1 || 'Découvrez nos nouveautés et profitez de -30% sur une sélection d\'articles.' }}</p>
+        <p class="text-lg text-[#E195AB] mb-6">{{ pubData.sous_titre1 || 'Découvrez nos nouveautés et profitez de -30% sur une sélection d\'articles.' }}</p>
         <a :href="pubData.url1 || '#'"
-          class="bg-white text-primary font-bold py-3 px-8 rounded-full hover:bg-gray-200 transition duration-300 transform hover:scale-105 cursor-pointer">{{ pubData.btn1 || 'Découvrir' }}</a>
+          class="bg-primary text-white font-bold py-3 px-8 rounded-full hover:bg-gray-200 transition duration-300 transform hover:scale-105 cursor-pointer">{{ pubData.btn1 || 'Découvrir' }}</a>
       </div>
       <div class="md:w-1/2">
         <img 
@@ -24,7 +24,7 @@
     <!-- Section Héros par défaut si pas de pub -->
     <section
       v-else-if="!pubLoading"
-      class="bg-primary rounded-lg shadow-lg text-white p-8 md:p-12 mb-12 flex flex-col md:flex-row items-center">
+      class="bg-[#F564A9] rounded-lg shadow-lg text-white p-8 md:p-12 mb-12 flex flex-col md:flex-row items-center">
       <div class="md:w-1/2 text-center md:text-left mb-8 md:mb-0">
         <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 leading-tight">Collection Été 2025</h1>
         <p class="text-lg text-white/80 mb-6">Découvrez nos nouveautés et profitez de -30% sur une sélection
@@ -62,13 +62,19 @@
           <p class="text-error-color">{{ error }}</p>
         </div>
         <div v-else>
-          <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4 md:gap-6">
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 md:gap-8">
             <div v-for="category in categories" :key="category.id" class="text-center group">
-              <a :href="category.href"
-                class="w-20 h-20 sm:w-24 sm:h-24 mx-auto flex items-center justify-center bg-white rounded-full shadow-md hover:shadow-lg hover:bg-primary hover:text-white text-primary transition-all duration-300 ease-in-out cursor-pointer">
-                <i :class="category.icon" class="text-3xl sm:text-4xl transition-colors group-hover:text-white"></i>
-              </a>
-              <p class="mt-3 text-sm font-semibold text-text-secondary truncate">{{ category.name }}</p>
+                             <a :href="category.href"
+                 class="block p-6 bg-white rounded-xl shadow-md hover:shadow-xl hover:bg-primary hover:text-white text-primary transition-all duration-300 ease-in-out cursor-pointer transform hover:scale-105 h-full flex flex-col justify-center items-center min-h-[120px]">
+                 <div class="text-center">
+                   <h3 class="text-lg font-bold text-primary group-hover:text-white transition-colors leading-tight">
+                     {{ category.name }}
+                   </h3>
+                 </div>
+                 <div class="text-sm text-text-secondary group-hover:text-white/80 transition-colors line-clamp-2 text-center mt-2" v-if="category.description">
+                   {{ category.description }}
+                 </div>
+               </a>
             </div>
           </div>
           
@@ -160,12 +166,12 @@
                 class="font-semibold text-md text-text-primary truncate cursor-pointer hover:text-primary transition-colors">
                 {{ product.nom }}</h3>
               <!-- Statut du stock -->
-              <div class="mt-2">
+              <!-- <div class="mt-2">
                 <span :class="getStockStatusClass(product.stock)"
                   class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium">
                   {{ getStockStatusText(product.stock) }}
                 </span>
-              </div>
+              </div> -->
             </div>
             <div class="mt-auto pt-2 flex flex-col sm:flex-row sm:justify-between sm:items-center">
               <div class="flex items-baseline space-x-2">
@@ -178,7 +184,7 @@
               <button
                 @click="showProductDetails(product)"
                 :disabled="product.stock === 0"
-                class="bg-gray-800 text-white text-xs font-bold py-2 px-4 rounded-full hover:bg-primary transition-colors cursor-pointer mt-2 sm:mt-0 disabled:opacity-50 disabled:cursor-not-allowed">
+                class="bg-primary text-white text-xs font-bold py-2 px-4 rounded-full hover:bg-primary transition-colors cursor-pointer mt-2 sm:mt-0 disabled:opacity-50 disabled:cursor-not-allowed">
                 {{ product.stock === 0 ? 'Rupture' : 'Acheter' }}
               </button>
             </div>
@@ -207,23 +213,26 @@
 
     <!-- Bannière promotionnelle intermédiaire -->
     <section v-if="!pubLoading && pubData" class="mb-12">
-      <div class="relative bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+      <div class="relative rounded-lg shadow-lg overflow-hidden" style="min-height: 300px;">
                  <img :src="pubData.img2" 
               :alt="pubData.titre_pub2 || 'Bannière de promotion'"
-              class="absolute inset-0 w-full h-full object-cover opacity-30"
+              class="absolute inset-0 w-full h-full object-cover"
               @error="handleImageError">
         <div class="relative p-12 text-center text-white">
-          <h3 class="text-sm font-bold uppercase tracking-widest text-primary">Offre Limitée</h3>
-          <h2 class="text-4xl font-extrabold mt-2 mb-4">{{ pubData.titre_pub2 || 'Jusqu\'à -50% sur les fins de série' }}</h2>
-          <p class="max-w-2xl mx-auto text-gray-300 mb-6">{{ pubData.sous_titre2 || 'Ne manquez pas nos meilleures offres sur une sélection d\'articles. C\'est le moment de se faire plaisir !' }}</p>
-          <a :href="pubData.url2 || '#'"
-            class="bg-primary text-white font-bold py-3 px-8 rounded-full hover:bg-hover-color transition duration-300 transform hover:scale-105 cursor-pointer">{{ pubData.btn2 || 'Voir les promotions' }}</a>
+          <!-- <h3 class="text-sm font-bold uppercase tracking-widest text-primary">Offre Limitée</h3> -->
+          <h2 v-if="pubData.titre_pub2" class="text-4xl font-extrabold mt-2 mb-4">{{ pubData.titre_pub2 }}</h2>
+          <p v-if="pubData.sous_titre2" class="max-w-2xl mx-auto text-gray-300 mb-6">{{ pubData.sous_titre2 }}</p>
+          <!-- <a v-if="pubData.url2 && pubData.btn2" :href="pubData.url2"
+            class="bg-primary text-white font-bold py-3 px-8 rounded-full hover:bg-hover-color transition duration-300 transform hover:scale-105 cursor-pointer">{{ pubData.btn2 }}
+          </a> -->
+          
+          
         </div>
       </div>
     </section>
 
     <!-- Bannière par défaut si pas de pub -->
-    <section v-else-if="!pubLoading" class="mb-12">
+    <!-- <section v-else-if="!pubLoading" class="mb-12">
       <div class="relative bg-gray-800 rounded-lg shadow-lg overflow-hidden">
         <img src="https://placehold.co/1200x400/1F2937/FFFFFF?text=Promo" alt="Bannière de promotion"
           class="absolute inset-0 w-full h-full object-cover opacity-30">
@@ -237,7 +246,7 @@
             les promotions</a>
         </div>
       </div>
-    </section>
+    </section> -->
 
     <!-- Loading pour la bannière -->
     <section v-else class="mb-12">

@@ -69,6 +69,12 @@
   
         <!-- Tableau des commandes -->
         <div class="bg-white rounded-xl shadow-lg overflow-x-auto">
+          <div class="px-6 py-3 bg-gray-50 border-b border-gray-200">
+            <p class="text-sm text-gray-600 flex items-center">
+              <i class="fas fa-info-circle mr-2 text-blue-500"></i>
+              Cliquez sur une ligne pour voir les détails de la commande
+            </p>
+          </div>
           <table class="w-full min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>
@@ -108,24 +114,31 @@
               </tr>
               
               <!-- Orders data -->
-              <tr v-else v-for="order in filteredOrders" :key="order.id" class="hover:bg-gray-50/50 transition-colors duration-200">
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-600">{{ order.numero_commande }}</td>
+              <tr v-else v-for="order in filteredOrders" :key="order.id" 
+                  class="hover:bg-gray-50/50 transition-colors duration-200 cursor-pointer group"
+                  @click="viewOrder(order.id)">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-600 group-hover:text-blue-600 transition-colors">
+                  <div class="flex items-center">
+                    <span>{{ order.numero_commande }}</span>
+                    <i class="fas fa-chevron-right ml-2 text-gray-400 group-hover:text-blue-500 transition-colors"></i>
+                  </div>
+                </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ formatDate(order.createdAt) }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  <div>{{ order.nom_client }} {{ order.prenom_client }}</div>
+                  <div class="group-hover:text-blue-600 transition-colors">{{ order.nom_client }} {{ order.prenom_client }}</div>
                   <div class="text-xs text-gray-500">{{ order.email_client }}</div>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ formatCurrency(order.montant_final) }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ order.type_paiement }}</td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <button v-if="order.etat === 'en_attente'" @click="openStatusModal(order)" :class="getStatusClasses(order.etat)" class="w-full text-left px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-yellow-500 transition-all">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 group-hover:text-blue-600 transition-colors">{{ formatCurrency(order.montant_final) }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 group-hover:text-blue-600 transition-colors">{{ order.type_paiement }}</td>
+                <td class="px-6 py-4 whitespace-nowrap" @click.stop>
+                  <button v-if="order.etat === 'payement_a_la_livraison'" @click="openStatusModal(order)" :class="getStatusClasses(order.etat)" class="w-full text-left px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-blue-500 transition-all">
                     {{ order.etat }}
                   </button>
                   <span v-else :class="getStatusClasses(order.etat)" class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full">
                     {{ order.etat }}
                   </span>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium" @click.stop>
                     <div class="flex items-center justify-center space-x-3">
                         <button @click="viewOrder(order.id)" title="Voir les détails" class="p-2 rounded-full text-gray-400 hover:bg-gray-200 hover:text-gray-700 transition-colors duration-200"><svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg></button>
                         <!-- <button @click="editOrder(order.id)" title="Modifier la commande" class="p-2 rounded-full text-gray-400 hover:bg-blue-100 hover:text-blue-600 transition-colors duration-200"><svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L15.232 5.232z" /></svg></button>
@@ -237,7 +250,7 @@
       },
       statusOptions() {
           // États disponibles pour la modification (selon l'API)
-          return ['en_attente', 'annule', 'livre'];
+          return ['annule', 'livre'];
       },
       paymentOptions() {
           return [...new Set(this.orders.map(order => order.type_paiement))];
@@ -271,6 +284,8 @@
           'en_attente': 'bg-yellow-100 text-yellow-800',
           'annule': 'bg-red-100 text-red-800',
           'livre': 'bg-blue-100 text-blue-800',
+          'payement_a_la_livraison': 'bg-blue-100 text-blue-800',
+          'paiement_echoue': 'bg-red-100 text-red-800',
         };
         return statusClassMap[status.toLowerCase()] || 'bg-gray-100 text-gray-800';
       },
